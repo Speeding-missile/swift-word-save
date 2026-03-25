@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download } from "lucide-react";
+import { Download, Network } from "lucide-react";
 import { motion } from "framer-motion";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { WordInput } from "@/components/WordInput";
@@ -7,6 +7,7 @@ import { FolderPicker } from "@/components/FolderPicker";
 import { FolderTicker } from "@/components/FolderTicker";
 import { DictionarySection } from "@/components/DictionarySection";
 import { QuizSection } from "@/components/QuizSection";
+import { GraphNetworkView } from "@/components/GraphNetworkView";
 import { useTheme } from "@/hooks/useTheme";
 import { useWordStore } from "@/hooks/useWordStore";
 
