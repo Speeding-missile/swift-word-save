@@ -5,9 +5,13 @@ export interface DictionaryEntry {
   phonetic?: string;
   meanings: {
     partOfSpeech: string;
+    synonyms?: string[];
+    antonyms?: string[];
     definitions: {
       definition: string;
       example?: string;
+      synonyms?: string[];
+      antonyms?: string[];
     }[];
   }[];
 }
