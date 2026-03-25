@@ -16,6 +16,7 @@ const Index = () => {
   const { words, addWord, deleteWord, folders, quickFolders, exportWords } = useWordStore();
   const [pendingWord, setPendingWord] = useState<string | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [showGraph, setShowGraph] = useState(false);
 
   const handleWordSubmit = (word: string) => {
     setPendingWord(word);
