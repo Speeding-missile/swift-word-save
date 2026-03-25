@@ -115,4 +115,12 @@
   .glow-text {
     text-shadow: 0 0 20px hsl(var(--nothing-glow) / 0.15);
   }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
