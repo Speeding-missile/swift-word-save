@@ -72,7 +72,7 @@ export function QuizSection({ words, folders, selectedFolder }: QuizSectionProps
     setLoading(false);
   }, [getWordPool, lookup]);
 
-  const buildQuestion = (word: string, entry: DictionaryEntry, pool: WordEntry[]) => {
+  const buildQuestion = async (word: string, entry: DictionaryEntry, pool: WordEntry[]) => {
     const quizType: QuizType = Math.random() > 0.5 ? "synonym" : "antonym";
 
     // Get synonyms/antonyms from the API response
