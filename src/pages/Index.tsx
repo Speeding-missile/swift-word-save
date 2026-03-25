@@ -46,13 +46,22 @@ const Index = () => {
           </div>
           <div className="flex items-center gap-2">
             {words.length > 0 && (
-              <button
-                onClick={exportWords}
-                className="flex h-7 items-center gap-1 rounded-full border border-border px-2.5 font-mono text-[10px] transition-colors hover:bg-accent"
-              >
-                <Download size={10} />
-                Export
-              </button>
+              <>
+                <button
+                  onClick={() => setShowGraph(true)}
+                  className="flex h-7 items-center gap-1 rounded-full border border-border px-2.5 font-mono text-[10px] transition-colors hover:bg-accent"
+                >
+                  <Network size={10} />
+                  Graph
+                </button>
+                <button
+                  onClick={exportWords}
+                  className="flex h-7 items-center gap-1 rounded-full border border-border px-2.5 font-mono text-[10px] transition-colors hover:bg-accent"
+                >
+                  <Download size={10} />
+                  Export
+                </button>
+              </>
             )}
             <ThemeToggle isDark={isDark} toggle={toggle} />
           </div>
