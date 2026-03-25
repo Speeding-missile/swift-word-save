@@ -39,9 +39,13 @@ export function useDictionary() {
         phonetic: data[0]?.phonetic || data[0]?.phonetics?.[0]?.text,
         meanings: (data[0]?.meanings || []).map((m: any) => ({
           partOfSpeech: m.partOfSpeech,
+          synonyms: m.synonyms || [],
+          antonyms: m.antonyms || [],
           definitions: (m.definitions || []).slice(0, 2).map((d: any) => ({
             definition: d.definition,
             example: d.example,
+            synonyms: d.synonyms || [],
+            antonyms: d.antonyms || [],
           })),
         })),
       };
