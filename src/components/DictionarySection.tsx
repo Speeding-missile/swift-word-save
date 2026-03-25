@@ -16,7 +16,8 @@ export function DictionarySection({ words, folders, selectedFolder }: Dictionary
   const [mode, setMode] = useState<FilterMode>(selectedFolder ? "folder" : "recent");
   const [entries, setEntries] = useState<Map<string, DictionaryEntry | null>>(new Map());
   const [displayWords, setDisplayWords] = useState<WordEntry[]>([]);
-  const { lookup, loading } = useDictionary();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { lookup } = useDictionary();
 
   const getFilteredWords = useCallback(() => {
     if (words.length === 0) return [];
@@ -39,8 +40,8 @@ export function DictionarySection({ words, folders, selectedFolder }: Dictionary
   useEffect(() => {
     const filtered = getFilteredWords();
     setDisplayWords(filtered);
+    setExpandedId(null);
 
-    // Lookup definitions
     filtered.forEach(async (w) => {
       if (!entries.has(w.word.toLowerCase())) {
         const result = await lookup(w.word);
@@ -53,6 +54,7 @@ export function DictionarySection({ words, folders, selectedFolder }: Dictionary
     setMode("random");
     const shuffled = [...words].sort(() => Math.random() - 0.5).slice(0, 8);
     setDisplayWords(shuffled);
+    setExpandedId(null);
     shuffled.forEach(async (w) => {
       if (!entries.has(w.word.toLowerCase())) {
         const result = await lookup(w.word);
@@ -61,10 +63,14 @@ export function DictionarySection({ words, folders, selectedFolder }: Dictionary
     });
   };
 
+  const toggleExpand = (id: string) => {
+    setExpandedId((prev) => (prev === id ? null : id));
+  };
+
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col">
       {/* Filter tabs */}
-      <div className="flex items-center gap-1.5 mb-3 flex-shrink-0">
+      <div className="flex items-center gap-1.5 mb-3">
         <button
           onClick={() => setMode("folder")}
           className={`flex items-center gap-1 rounded-full px-3 py-1 font-mono text-xs transition-colors ${
@@ -100,77 +106,116 @@ export function DictionarySection({ words, folders, selectedFolder }: Dictionary
         </button>
       </div>
 
-      {/* Dictionary cards */}
-      <div className="overflow-y-auto flex-1 space-y-2 pr-1 scrollbar-hide">
-        {displayWords.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <BookOpen size={24} className="mb-2 opacity-40" />
-            <p className="font-mono text-xs">Save words to see definitions here.</p>
-          </div>
-        ) : (
-          <AnimatePresence initial={false}>
-            {displayWords.map((w) => {
-              const entry = entries.get(w.word.toLowerCase());
-              return (
-                <motion.div
-                  key={w.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="rounded-lg border border-border bg-card p-3"
-                >
-                  <div className="flex items-baseline justify-between mb-1">
-                    <h3 className="font-mono text-base font-bold">{w.word}</h3>
-                    {entry?.phonetic && (
-                      <span className="font-mono text-xs text-muted-foreground">{entry.phonetic}</span>
+      {/* Horizontal scrollable dictionary cards */}
+      {displayWords.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+          <BookOpen size={24} className="mb-2 opacity-40" />
+          <p className="font-mono text-xs">Save words to see definitions here.</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto scrollbar-hide pb-2">
+          <div className="flex gap-2.5 w-max">
+            <AnimatePresence initial={false}>
+              {displayWords.map((w) => {
+                const entry = entries.get(w.word.toLowerCase());
+                const isExpanded = expandedId === w.id;
+                const firstMeaning = entry?.meanings[0];
+                const firstDef = firstMeaning?.definitions[0];
+
+                return (
+                  <motion.div
+                    key={w.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    onClick={() => toggleExpand(w.id)}
+                    className={`flex-shrink-0 rounded-lg border border-border bg-card cursor-pointer transition-colors hover:border-muted-foreground ${
+                      isExpanded ? "w-72 p-3" : "w-44 p-3"
+                    }`}
+                  >
+                    {/* Minimal view */}
+                    <div className="flex items-baseline justify-between mb-1">
+                      <h3 className="font-mono text-sm font-bold truncate">{w.word}</h3>
+                      {entry?.phonetic && (
+                        <span className="font-mono text-[10px] text-muted-foreground ml-1 truncate">
+                          {entry.phonetic}
+                        </span>
+                      )}
+                    </div>
+
+                    {entry === undefined && (
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Loader2 size={10} className="animate-spin" />
+                        <span className="font-mono text-[10px]">Loading...</span>
+                      </div>
                     )}
-                  </div>
 
-                  {entry === undefined && (
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      <Loader2 size={12} className="animate-spin" />
-                      <span className="font-mono text-xs">Looking up...</span>
-                    </div>
-                  )}
+                    {entry === null && (
+                      <p className="font-mono text-[10px] text-muted-foreground italic">
+                        No definition found.
+                      </p>
+                    )}
 
-                  {entry === null && (
-                    <p className="font-mono text-xs text-muted-foreground italic">
-                      No definition found.
-                    </p>
-                  )}
-
-                  {entry && entry.meanings.map((m, mi) => (
-                    <div key={mi} className="mt-1.5">
-                      <span className="inline-block rounded-sm bg-secondary px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-                        {m.partOfSpeech}
-                      </span>
-                      {m.definitions.map((d, di) => (
-                        <div key={di} className="ml-2 mb-1">
-                          <p className="font-mono text-xs leading-relaxed">
-                            {d.definition}
+                    {entry && !isExpanded && (
+                      <div>
+                        {firstMeaning && (
+                          <span className="inline-block rounded-sm bg-secondary px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground mb-1">
+                            {firstMeaning.partOfSpeech}
+                          </span>
+                        )}
+                        {firstDef && (
+                          <p className="font-mono text-[11px] leading-snug text-muted-foreground line-clamp-2">
+                            {firstDef.definition}
                           </p>
-                          {d.example && (
-                            <p className="font-mono text-[11px] text-muted-foreground mt-0.5 italic">
-                              "{d.example}"
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ))}
+                        )}
+                      </div>
+                    )}
 
-                  <div className="mt-2 flex items-center gap-1">
-                    <span className="rounded-sm bg-secondary px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground flex items-center gap-0.5">
-                      <Folder size={8} />
-                      {w.folder}
-                    </span>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        )}
-      </div>
+                    {/* Expanded view */}
+                    <AnimatePresence>
+                      {isExpanded && entry && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden"
+                        >
+                          {entry.meanings.map((m, mi) => (
+                            <div key={mi} className="mt-1.5">
+                              <span className="inline-block rounded-sm bg-secondary px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground mb-1">
+                                {m.partOfSpeech}
+                              </span>
+                              {m.definitions.map((d, di) => (
+                                <div key={di} className="ml-1.5 mb-1.5">
+                                  <p className="font-mono text-[11px] leading-relaxed">
+                                    {d.definition}
+                                  </p>
+                                  {d.example && (
+                                    <p className="font-mono text-[10px] text-muted-foreground mt-0.5 italic">
+                                      "{d.example}"
+                                    </p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                          <div className="mt-2 flex items-center gap-1">
+                            <span className="rounded-sm bg-secondary px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground flex items-center gap-0.5">
+                              <Folder size={7} />
+                              {w.folder}
+                            </span>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
