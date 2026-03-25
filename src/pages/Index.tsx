@@ -152,6 +152,11 @@ const Index = () => {
           />
         </motion.div>
       </div>
+
+      {/* Graph Network View */}
+      {showGraph && (
+        <GraphNetworkView words={words} onClose={() => setShowGraph(false)} />
+      )}
     </div>
   );
 };
