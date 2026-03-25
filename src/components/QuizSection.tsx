@@ -72,7 +72,7 @@ export function QuizSection({ words, folders, selectedFolder }: QuizSectionProps
     setLoading(false);
   }, [getWordPool, lookup]);
 
-  const buildQuestion = (word: string, entry: DictionaryEntry, pool: WordEntry[]) => {
+  const buildQuestion = async (word: string, entry: DictionaryEntry, pool: WordEntry[]) => {
     const quizType: QuizType = Math.random() > 0.5 ? "synonym" : "antonym";
 
     // Get synonyms/antonyms from the API response
@@ -97,29 +97,31 @@ export function QuizSection({ words, folders, selectedFolder }: QuizSectionProps
     relatedWords = [...new Set(relatedWords.filter((w) => w.toLowerCase() !== word.toLowerCase()))];
 
     if (relatedWords.length === 0) {
-      // Fallback: use definition-based question
-      const def = entry.meanings[0]?.definitions[0]?.definition || "";
-      const correctAnswer = def.length > 60 ? def.slice(0, 57) + "..." : def;
-
-      // Generate wrong options from other words' definitions
-      const wrongOptions = pool
-        .filter((w) => w.word.toLowerCase() !== word.toLowerCase())
-        .slice(0, 3)
-        .map((w) => w.word);
-
-      if (wrongOptions.length < 2) {
-        setQuestion(null);
-        return;
+      // No synonyms/antonyms found — skip this word, try another from pool
+      const fallback = pool.filter((w) => w.word.toLowerCase() !== word.toLowerCase());
+      if (fallback.length >= 2) {
+        const alt = fallback[Math.floor(Math.random() * fallback.length)];
+        const altEntry = await lookup(alt.word);
+        if (altEntry) {
+          // Collect related words from alt entry
+          let altRelated: string[] = [];
+          altEntry.meanings.forEach((m) => {
+            m.definitions.forEach((d: any) => {
+              if (d.synonyms) altRelated.push(...d.synonyms);
+              if (d.antonyms) altRelated.push(...d.antonyms);
+            });
+            if (m.synonyms) altRelated.push(...m.synonyms);
+            if (m.antonyms) altRelated.push(...m.antonyms);
+          });
+          altRelated = [...new Set(altRelated.filter((w) => w.toLowerCase() !== alt.word.toLowerCase()))];
+          if (altRelated.length > 0) {
+            buildQuestion(alt.word, altEntry, pool);
+            return;
+          }
+        }
       }
-
-      const options = shuffleArray([correctAnswer, ...wrongOptions.slice(0, 3)]);
-
-      setQuestion({
-        word,
-        correctAnswer,
-        options,
-        type: quizType,
-      });
+      // Truly no quiz possible
+      setQuestion(null);
       return;
     }
 

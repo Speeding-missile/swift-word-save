@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download } from "lucide-react";
+import { Download, Network } from "lucide-react";
 import { motion } from "framer-motion";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { WordInput } from "@/components/WordInput";
@@ -7,6 +7,7 @@ import { FolderPicker } from "@/components/FolderPicker";
 import { FolderTicker } from "@/components/FolderTicker";
 import { DictionarySection } from "@/components/DictionarySection";
 import { QuizSection } from "@/components/QuizSection";
+import { GraphNetworkView } from "@/components/GraphNetworkView";
 import { useTheme } from "@/hooks/useTheme";
 import { useWordStore } from "@/hooks/useWordStore";
 
@@ -15,6 +16,7 @@ const Index = () => {
   const { words, addWord, deleteWord, folders, quickFolders, exportWords } = useWordStore();
   const [pendingWord, setPendingWord] = useState<string | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [showGraph, setShowGraph] = useState(false);
 
   const handleWordSubmit = (word: string) => {
     setPendingWord(word);
@@ -44,13 +46,22 @@ const Index = () => {
           </div>
           <div className="flex items-center gap-2">
             {words.length > 0 && (
-              <button
-                onClick={exportWords}
-                className="flex h-7 items-center gap-1 rounded-full border border-border px-2.5 font-mono text-[10px] transition-colors hover:bg-accent"
-              >
-                <Download size={10} />
-                Export
-              </button>
+              <>
+                <button
+                  onClick={() => setShowGraph(true)}
+                  className="flex h-7 items-center gap-1 rounded-full border border-border px-2.5 font-mono text-[10px] transition-colors hover:bg-accent"
+                >
+                  <Network size={10} />
+                  Graph
+                </button>
+                <button
+                  onClick={exportWords}
+                  className="flex h-7 items-center gap-1 rounded-full border border-border px-2.5 font-mono text-[10px] transition-colors hover:bg-accent"
+                >
+                  <Download size={10} />
+                  Export
+                </button>
+              </>
             )}
             <ThemeToggle isDark={isDark} toggle={toggle} />
           </div>
@@ -141,6 +152,11 @@ const Index = () => {
           />
         </motion.div>
       </div>
+
+      {/* Graph Network View */}
+      {showGraph && (
+        <GraphNetworkView words={words} onClose={() => setShowGraph(false)} />
+      )}
     </div>
   );
 };
