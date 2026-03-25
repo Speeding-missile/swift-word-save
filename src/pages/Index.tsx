@@ -6,6 +6,7 @@ import { WordInput } from "@/components/WordInput";
 import { FolderPicker } from "@/components/FolderPicker";
 import { FolderTicker } from "@/components/FolderTicker";
 import { DictionarySection } from "@/components/DictionarySection";
+import { QuizSection } from "@/components/QuizSection";
 import { useTheme } from "@/hooks/useTheme";
 import { useWordStore } from "@/hooks/useWordStore";
 
@@ -27,13 +28,13 @@ const Index = () => {
   };
 
   return (
-    <div className="h-screen bg-background dot-pattern flex flex-col overflow-hidden">
-      <div className="mx-auto w-full max-w-lg px-4 py-4 flex flex-col h-full">
+    <div className="min-h-screen bg-background overflow-y-auto">
+      <div className="mx-auto w-full max-w-lg px-4 py-4">
         {/* Header */}
         <motion.header
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-3 flex items-center justify-between flex-shrink-0"
+          className="mb-3 flex items-center justify-between"
         >
           <div>
             <h1 className="font-mono text-lg font-bold tracking-tight glow-text">
@@ -60,13 +61,13 @@ const Index = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="mb-3 flex-shrink-0"
+          className="mb-3"
         >
           <WordInput onSubmit={handleWordSubmit} />
         </motion.div>
 
-        {/* Folder Picker (conditionally shown) */}
-        <div className="mb-3 flex-shrink-0">
+        {/* Folder Picker */}
+        <div className="mb-3">
           <FolderPicker
             folders={folders}
             quickFolders={quickFolders}
@@ -76,12 +77,12 @@ const Index = () => {
           />
         </div>
 
-        {/* Top half - Folders with word tickers */}
+        {/* Folders with word tickers */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="flex-shrink-0 mb-3"
+          className="mb-3"
         >
           <div className="flex items-center justify-between mb-2">
             <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -101,25 +102,43 @@ const Index = () => {
         </motion.div>
 
         {/* Divider */}
-        <div className="border-t border-border my-2 flex-shrink-0" />
+        <div className="border-t border-border my-4" />
 
-        {/* Bottom half - Dictionary */}
+        {/* Dictionary */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="flex-1 min-h-0 overflow-hidden"
+          className="mb-3"
         >
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
             Dictionary
           </p>
-          <div className="h-[calc(100%-20px)]">
-            <DictionarySection
-              words={words}
-              folders={folders}
-              selectedFolder={selectedFolder}
-            />
-          </div>
+          <DictionarySection
+            words={words}
+            folders={folders}
+            selectedFolder={selectedFolder}
+          />
+        </motion.div>
+
+        {/* Divider */}
+        <div className="border-t border-border my-4" />
+
+        {/* Quiz Section */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="mb-6"
+        >
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
+            Quiz
+          </p>
+          <QuizSection
+            words={words}
+            folders={folders}
+            selectedFolder={selectedFolder}
+          />
         </motion.div>
       </div>
     </div>
