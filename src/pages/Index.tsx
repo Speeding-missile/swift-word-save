@@ -67,35 +67,30 @@ const Index = () => {
           </div>
         </motion.header>
 
-        {/* Personality Statement */}
-        <AnimatePresence>
-          {personality && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mb-2 overflow-hidden"
-            >
-              <div className="rounded-md border border-border bg-secondary/40 px-3 py-1.5">
-                <p className="font-mono text-[11px] text-foreground leading-relaxed">
-                  {personality.statement}
-                </p>
-                <span className="font-mono text-[9px] text-muted-foreground">
-                  mostly {personality.category.toLowerCase()} words
-                </span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Input */}
+        {/* Input + Personality Row */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="mb-3"
+          className="mb-3 flex items-start gap-2"
         >
-          <WordInput onSubmit={handleWordSubmit} existingWords={words} />
+          <div className="w-[45%] flex-shrink-0">
+            <WordInput onSubmit={handleWordSubmit} existingWords={words} />
+          </div>
+          {personality && (
+            <motion.div
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex-1 min-w-0 rounded-md border border-border bg-secondary/40 px-3 py-2 flex flex-col justify-center"
+            >
+              <p className="font-mono text-[11px] text-foreground leading-relaxed truncate">
+                {personality.statement}
+              </p>
+              <span className="font-mono text-[9px] text-muted-foreground">
+                mostly {personality.category.toLowerCase()} words
+              </span>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Folder Picker */}
