@@ -138,6 +138,8 @@ export function WordInput({ onSubmit, existingWords = [] }: WordInputProps) {
         className={`flex items-center gap-2 rounded-lg border p-2 transition-colors focus-within:border-foreground ${
           validationResult && !validationResult.isValid
             ? "border-destructive bg-destructive/5"
+            : duplicateInfo
+            ? "border-amber-500 bg-amber-500/5"
             : "border-border bg-card"
         }`}
       >
