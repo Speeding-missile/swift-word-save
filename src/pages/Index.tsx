@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Download, Network } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { WordInput } from "@/components/WordInput";
 import { FolderPicker } from "@/components/FolderPicker";
@@ -10,6 +10,7 @@ import { QuizSection } from "@/components/QuizSection";
 import { GraphNetworkView } from "@/components/GraphNetworkView";
 import { useTheme } from "@/hooks/useTheme";
 import { useWordStore } from "@/hooks/useWordStore";
+import { getPersonalityStatement } from "@/lib/wordCategories";
 
 const Index = () => {
   const { isDark, toggle } = useTheme();
@@ -17,6 +18,8 @@ const Index = () => {
   const [pendingWord, setPendingWord] = useState<string | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [showGraph, setShowGraph] = useState(false);
+
+  const personality = useMemo(() => getPersonalityStatement(words), [words]);
 
   const handleWordSubmit = (word: string) => {
     setPendingWord(word);
@@ -31,34 +34,31 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background overflow-y-auto">
-      <div className="mx-auto w-full max-w-lg px-4 py-4">
-        {/* Header */}
+      <div className="mx-auto w-full max-w-lg px-4 py-3">
+        {/* Compact Header */}
         <motion.header
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-3 flex items-center justify-between"
+          className="mb-2 flex items-center justify-between"
         >
-          <div>
-            <h1 className="font-mono text-lg font-bold tracking-tight glow-text">
-              word(vault)
-            </h1>
-            <p className="font-mono text-[10px] text-muted-foreground">quick word capture</p>
-          </div>
-          <div className="flex items-center gap-2">
+          <h1 className="font-mono text-sm font-bold tracking-tight glow-text">
+            word(vault)
+          </h1>
+          <div className="flex items-center gap-1.5">
             {words.length > 0 && (
               <>
                 <button
                   onClick={() => setShowGraph(true)}
-                  className="flex h-7 items-center gap-1 rounded-full border border-border px-2.5 font-mono text-[10px] transition-colors hover:bg-accent"
+                  className="flex h-6 items-center gap-1 rounded-full border border-border px-2 font-mono text-[9px] transition-colors hover:bg-accent"
                 >
-                  <Network size={10} />
+                  <Network size={9} />
                   Graph
                 </button>
                 <button
                   onClick={exportWords}
-                  className="flex h-7 items-center gap-1 rounded-full border border-border px-2.5 font-mono text-[10px] transition-colors hover:bg-accent"
+                  className="flex h-6 items-center gap-1 rounded-full border border-border px-2 font-mono text-[9px] transition-colors hover:bg-accent"
                 >
-                  <Download size={10} />
+                  <Download size={9} />
                   Export
                 </button>
               </>
@@ -66,6 +66,27 @@ const Index = () => {
             <ThemeToggle isDark={isDark} toggle={toggle} />
           </div>
         </motion.header>
+
+        {/* Personality Statement */}
+        <AnimatePresence>
+          {personality && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-2 overflow-hidden"
+            >
+              <div className="rounded-md border border-border bg-secondary/40 px-3 py-1.5">
+                <p className="font-mono text-[11px] text-foreground leading-relaxed">
+                  {personality.statement}
+                </p>
+                <span className="font-mono text-[9px] text-muted-foreground">
+                  mostly {personality.category.toLowerCase()} words
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Input */}
         <motion.div
