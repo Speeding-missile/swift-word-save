@@ -251,6 +251,30 @@ export function WordInput({ onSubmit, existingWords = [] }: WordInputProps) {
         )}
       </AnimatePresence>
 
+      {/* Duplicate word notice */}
+      <AnimatePresence>
+        {duplicateInfo && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="mt-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-2.5"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <Archive size={12} className="text-amber-600 dark:text-amber-400" />
+                <span className="font-mono text-xs text-amber-700 dark:text-amber-300">
+                  <strong>{duplicateInfo.word}</strong> already saved in <strong>{duplicateInfo.folder}</strong>
+                </span>
+              </div>
+              <button onClick={() => setDuplicateInfo(null)} className="text-muted-foreground hover:text-foreground">
+                <X size={12} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Validation error */}
       <AnimatePresence>
         {validationResult && !validationResult.isValid && (
