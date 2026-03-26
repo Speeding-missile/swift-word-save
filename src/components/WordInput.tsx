@@ -150,6 +150,7 @@ export function WordInput({ onSubmit, existingWords = [] }: WordInputProps) {
           onChange={(e) => {
             setValue(e.target.value);
             if (validationResult) clearValidation();
+            if (duplicateInfo) setDuplicateInfo(null);
           }}
           onKeyDown={handleKeyDown}
           onFocus={() => {
