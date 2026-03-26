@@ -74,7 +74,7 @@ const Index = () => {
           transition={{ delay: 0.1 }}
           className="mb-3"
         >
-          <WordInput onSubmit={handleWordSubmit} />
+          <WordInput onSubmit={handleWordSubmit} existingWords={words} />
         </motion.div>
 
         {/* Folder Picker */}

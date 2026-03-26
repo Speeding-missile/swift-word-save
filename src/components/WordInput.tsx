@@ -1,16 +1,24 @@
-import { useState, useCallback } from "react";
-import { Mic, MicOff, Plus, X, AlertCircle } from "lucide-react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { Mic, MicOff, Plus, X, AlertCircle, BookOpen, Archive } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useWordValidation } from "@/hooks/useWordValidation";
+import type { WordEntry } from "@/hooks/useWordStore";
 
 interface WordInputProps {
   onSubmit: (word: string) => void;
+  existingWords?: WordEntry[];
 }
 
-export function WordInput({ onSubmit }: WordInputProps) {
+export function WordInput({ onSubmit, existingWords = [] }: WordInputProps) {
   const [value, setValue] = useState("");
   const { validate, validationResult, validating, clearValidation } = useWordValidation();
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [dictionarySuggestions, setDictionarySuggestions] = useState<string[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleVoiceResult = useCallback((text: string) => {
     setValue(text);
@@ -19,8 +27,74 @@ export function WordInput({ onSubmit }: WordInputProps) {
 
   const { isListening, toggle: toggleVoice } = useVoiceInput(handleVoiceResult);
 
+  // Existing words that match input
+  const matchingExisting = useMemo(() => {
+    const q = value.trim().toLowerCase();
+    if (!q || q.length < 1) return [];
+    return existingWords
+      .filter((w) => w.word.toLowerCase().includes(q))
+      .slice(0, 5);
+  }, [value, existingWords]);
+
+  // Fetch dictionary suggestions as user types
+  useEffect(() => {
+    const q = value.trim().toLowerCase();
+    if (q.length < 2) {
+      setDictionarySuggestions([]);
+      return;
+    }
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setLoadingSuggestions(true);
+      try {
+        const res = await fetch(
+          `https://api.datamuse.com/sug?s=${encodeURIComponent(q)}&max=5`
+        );
+        if (res.ok) {
+          const data: { word: string }[] = await res.json();
+          setDictionarySuggestions(
+            data
+              .map((d) => d.word)
+              .filter((w) => w.toLowerCase() !== q)
+          );
+        }
+      } catch {
+        setDictionarySuggestions([]);
+      }
+      setLoadingSuggestions(false);
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [value]);
+
+  // Show/hide dropdown
+  useEffect(() => {
+    const q = value.trim();
+    setShowDropdown(q.length >= 1 && (matchingExisting.length > 0 || dictionarySuggestions.length > 0));
+  }, [value, matchingExisting, dictionarySuggestions]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   const handleSubmit = async () => {
     if (!value.trim()) return;
+    setShowDropdown(false);
     const isValid = await validate(value.trim());
     if (isValid) {
       onSubmit(value.trim());
@@ -30,11 +104,19 @@ export function WordInput({ onSubmit }: WordInputProps) {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") handleSubmit();
+    if (e.key === "Escape") setShowDropdown(false);
   };
 
   const handleSuggestionClick = (suggestion: string) => {
     setValue(suggestion);
     clearValidation();
+    setShowDropdown(false);
+  };
+
+  const handlePickWord = (word: string) => {
+    setValue(word);
+    setShowDropdown(false);
+    inputRef.current?.focus();
   };
 
   return (
@@ -47,6 +129,7 @@ export function WordInput({ onSubmit }: WordInputProps) {
         }`}
       >
         <input
+          ref={inputRef}
           type="text"
           value={value}
           onChange={(e) => {
@@ -54,6 +137,12 @@ export function WordInput({ onSubmit }: WordInputProps) {
             if (validationResult) clearValidation();
           }}
           onKeyDown={handleKeyDown}
+          onFocus={() => {
+            const q = value.trim();
+            if (q.length >= 1 && (matchingExisting.length > 0 || dictionarySuggestions.length > 0)) {
+              setShowDropdown(true);
+            }
+          }}
           placeholder="Type a new word..."
           className="flex-1 bg-transparent px-2 py-2 font-mono text-lg outline-none placeholder:text-muted-foreground"
         />
@@ -90,6 +179,62 @@ export function WordInput({ onSubmit }: WordInputProps) {
           <Plus size={18} />
         </button>
       </div>
+
+      {/* Autocomplete dropdown */}
+      <AnimatePresence>
+        {showDropdown && (
+          <motion.div
+            ref={dropdownRef}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-border bg-card shadow-lg overflow-hidden"
+          >
+            {/* Existing saved words section */}
+            {matchingExisting.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-border bg-secondary/50">
+                  <Archive size={10} className="text-muted-foreground" />
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Already saved
+                  </span>
+                </div>
+                {matchingExisting.map((w) => (
+                  <button
+                    key={w.id}
+                    onClick={() => handlePickWord(w.word)}
+                    className="flex w-full items-center justify-between px-3 py-1.5 font-mono text-xs hover:bg-accent transition-colors"
+                  >
+                    <span>{w.word}</span>
+                    <span className="text-[10px] text-muted-foreground">{w.folder}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Dictionary suggestions section */}
+            {dictionarySuggestions.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-border bg-secondary/50">
+                  <BookOpen size={10} className="text-muted-foreground" />
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Suggestions
+                  </span>
+                </div>
+                {dictionarySuggestions.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => handlePickWord(s)}
+                    className="flex w-full items-center px-3 py-1.5 font-mono text-xs hover:bg-accent transition-colors"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Validation error */}
       <AnimatePresence>

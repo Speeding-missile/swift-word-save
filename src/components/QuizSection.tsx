@@ -127,23 +127,50 @@ export function QuizSection({ words, folders, selectedFolder }: QuizSectionProps
 
     const correctAnswer = relatedWords[Math.floor(Math.random() * relatedWords.length)];
 
-    // Generate distractors from other words in pool
-    const distractors = pool
-      .map((w) => w.word)
-      .filter(
+    // Generate distractors by looking up other words from the pool via dictionary API
+    const distractors: string[] = [];
+    const otherWords = pool
+      .filter((w) => w.word.toLowerCase() !== word.toLowerCase())
+      .sort(() => Math.random() - 0.5);
+
+    for (const ow of otherWords) {
+      if (distractors.length >= 3) break;
+      const owEntry = await lookup(ow.word);
+      if (!owEntry) continue;
+      // Collect synonyms/antonyms from this other word as distractor candidates
+      const owRelated: string[] = [];
+      owEntry.meanings.forEach((m) => {
+        m.definitions.forEach((d: any) => {
+          if (d.synonyms) owRelated.push(...d.synonyms);
+          if (d.antonyms) owRelated.push(...d.antonyms);
+        });
+        if (m.synonyms) owRelated.push(...m.synonyms);
+        if (m.antonyms) owRelated.push(...m.antonyms);
+      });
+      // Pick one related word from this other word as a distractor
+      const candidates = [...new Set(owRelated)].filter(
         (w) =>
           w.toLowerCase() !== word.toLowerCase() &&
           w.toLowerCase() !== correctAnswer.toLowerCase() &&
-          !relatedWords.includes(w.toLowerCase())
-      )
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 3);
+          !relatedWords.includes(w.toLowerCase()) &&
+          !distractors.includes(w.toLowerCase())
+      );
+      if (candidates.length > 0) {
+        distractors.push(candidates[Math.floor(Math.random() * candidates.length)]);
+      } else if (
+        ow.word.toLowerCase() !== correctAnswer.toLowerCase() &&
+        !relatedWords.includes(ow.word.toLowerCase()) &&
+        !distractors.includes(ow.word.toLowerCase())
+      ) {
+        distractors.push(ow.word);
+      }
+    }
 
-    // Add some common distractors if not enough
-    const fallbackDistractors = ["swift", "gentle", "bright", "hollow", "narrow", "calm", "fierce", "vivid"];
+    // Fallback distractors if still not enough
+    const fallbackDistractors = ["swift", "gentle", "bright", "hollow", "narrow", "calm", "fierce", "vivid", "serene", "bold"];
     while (distractors.length < 3) {
       const fb = fallbackDistractors[Math.floor(Math.random() * fallbackDistractors.length)];
-      if (!distractors.includes(fb) && fb !== correctAnswer.toLowerCase() && fb !== word.toLowerCase()) {
+      if (!distractors.includes(fb) && fb !== correctAnswer.toLowerCase() && fb !== word.toLowerCase() && !relatedWords.includes(fb)) {
         distractors.push(fb);
       }
     }
