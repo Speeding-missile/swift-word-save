@@ -67,19 +67,16 @@ const Index = () => {
           </div>
         </motion.header>
 
-        {/* Input + Personality Row */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-3 flex items-start gap-2"
-        >
-          <div className="w-1/4 flex-shrink-0">
-            <WordInput onSubmit={handleWordSubmit} existingWords={words} />
-          </div>
-          <div className="w-3/4 min-w-0">
-            {personality ? (
-              <div className="rounded-md border border-border bg-secondary/40 px-3 py-2 flex flex-col justify-center h-full">
+        {/* Personality Statement */}
+        <AnimatePresence>
+          {personality && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-2 overflow-hidden"
+            >
+              <div className="rounded-md border border-border bg-secondary/40 px-3 py-1.5">
                 <p className="font-mono text-[11px] text-foreground leading-relaxed">
                   {personality.statement}
                 </p>
@@ -87,12 +84,18 @@ const Index = () => {
                   mostly {personality.category.toLowerCase()} words
                 </span>
               </div>
-            ) : (
-              <div className="rounded-md border border-border bg-secondary/20 px-3 py-2 flex items-center h-full">
-                <p className="font-mono text-[10px] text-muted-foreground">Add words to see your personality here</p>
-              </div>
-            )}
-          </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Input */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-3"
+        >
+          <WordInput onSubmit={handleWordSubmit} existingWords={words} />
         </motion.div>
 
         {/* Folder Picker */}
