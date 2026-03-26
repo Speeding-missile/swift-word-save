@@ -12,6 +12,7 @@ interface WordInputProps {
 
 export function WordInput({ onSubmit, existingWords = [] }: WordInputProps) {
   const [value, setValue] = useState("");
+  const [duplicateInfo, setDuplicateInfo] = useState<{ word: string; folder: string } | null>(null);
   const { validate, validationResult, validating, clearValidation } = useWordValidation();
   const [showDropdown, setShowDropdown] = useState(false);
   const [dictionarySuggestions, setDictionarySuggestions] = useState<string[]>([]);
