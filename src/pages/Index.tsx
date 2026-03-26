@@ -74,10 +74,10 @@ const Index = () => {
           transition={{ delay: 0.1 }}
           className="mb-3 flex items-start gap-2"
         >
-          <div className="w-[45%] flex-shrink-0">
+          <div className="w-1/4 flex-shrink-0">
             <WordInput onSubmit={handleWordSubmit} existingWords={words} />
           </div>
-          {personality && (
+          <div className="w-3/4 min-w-0">
             <motion.div
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
