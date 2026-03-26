@@ -3,82 +3,7 @@ import { X, ZoomIn, ZoomOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { WordEntry } from "@/hooks/useWordStore";
 import { useDictionary } from "@/hooks/useDictionary";
-
-// Word categories based on semantic analysis
-const CATEGORIES: Record<string, { keywords: string[]; label: string }> = {
-  praise: {
-    label: "Praising",
-    keywords: [
-      "good", "great", "excellent", "wonderful", "beautiful", "amazing", "brilliant",
-      "superb", "magnificent", "admire", "commend", "praise", "love", "adore", "cherish",
-      "noble", "glorious", "splendid", "divine", "graceful", "elegant", "lovely",
-      "kind", "gentle", "generous", "benevolent", "virtuous", "honorable", "worthy",
-      "approve", "applaud", "celebrate", "acclaim", "exalt", "glorify", "revere",
-    ],
-  },
-  scold: {
-    label: "Scolding",
-    keywords: [
-      "bad", "terrible", "horrible", "awful", "ugly", "disgust", "hate", "despise",
-      "condemn", "criticize", "blame", "scold", "rebuke", "reprimand", "reproach",
-      "wicked", "evil", "vile", "nasty", "cruel", "harsh", "bitter", "hostile",
-      "denounce", "chastise", "berate", "castigate", "censure", "admonish",
-    ],
-  },
-  emotion: {
-    label: "Emotion",
-    keywords: [
-      "happy", "sad", "angry", "fear", "joy", "sorrow", "grief", "delight",
-      "anxiety", "worry", "calm", "peace", "rage", "fury", "bliss", "ecstasy",
-      "melancholy", "nostalgia", "empathy", "sympathy", "passion", "desire",
-      "hope", "despair", "pride", "shame", "guilt", "envy", "jealousy", "awe",
-    ],
-  },
-  action: {
-    label: "Action",
-    keywords: [
-      "run", "walk", "jump", "fly", "swim", "fight", "build", "create", "destroy",
-      "make", "break", "push", "pull", "throw", "catch", "climb", "fall", "rise",
-      "move", "stop", "start", "begin", "end", "finish", "complete", "achieve",
-      "accomplish", "perform", "execute", "operate", "manage", "handle", "drive",
-    ],
-  },
-  intellect: {
-    label: "Intellect",
-    keywords: [
-      "think", "know", "learn", "study", "understand", "reason", "logic", "wisdom",
-      "knowledge", "intelligence", "clever", "smart", "bright", "genius", "insight",
-      "analyze", "examine", "investigate", "research", "discover", "invent", "solve",
-      "comprehend", "perceive", "recognize", "realize", "imagine", "conceive", "ponder",
-    ],
-  },
-  nature: {
-    label: "Nature",
-    keywords: [
-      "tree", "flower", "river", "mountain", "ocean", "forest", "garden", "sun",
-      "moon", "star", "sky", "rain", "wind", "earth", "fire", "water", "cloud",
-      "stone", "leaf", "seed", "root", "bloom", "spring", "summer", "winter", "autumn",
-    ],
-  },
-  social: {
-    label: "Social",
-    keywords: [
-      "friend", "family", "community", "society", "group", "team", "partner",
-      "relationship", "bond", "connect", "communicate", "share", "help", "support",
-      "cooperate", "collaborate", "together", "unite", "gather", "belong", "trust",
-      "respect", "honor", "welcome", "greet", "invite", "include", "embrace",
-    ],
-  },
-  descriptive: {
-    label: "Descriptive",
-    keywords: [
-      "big", "small", "tall", "short", "long", "wide", "narrow", "thick", "thin",
-      "fast", "slow", "hot", "cold", "warm", "cool", "bright", "dark", "light",
-      "heavy", "soft", "hard", "smooth", "rough", "sharp", "dull", "loud", "quiet",
-      "fresh", "stale", "clean", "dirty", "pure", "rich", "poor", "deep", "shallow",
-    ],
-  },
-};
+import { CATEGORIES, categorizeWord } from "@/lib/wordCategories";
 
 interface CategoryData {
   category: string;
@@ -90,21 +15,6 @@ interface CategoryData {
 interface GraphNetworkViewProps {
   words: WordEntry[];
   onClose: () => void;
-}
-
-function categorizeWord(word: string, definition?: string): string[] {
-  const lower = word.toLowerCase();
-  const defLower = (definition || "").toLowerCase();
-  const categories: string[] = [];
-
-  for (const [cat, data] of Object.entries(CATEGORIES)) {
-    const match = data.keywords.some(
-      (kw) => lower.includes(kw) || kw.includes(lower) || defLower.includes(kw)
-    );
-    if (match) categories.push(cat);
-  }
-
-  return categories.length > 0 ? categories : ["uncategorized"];
 }
 
 // Simple force-directed node positions
