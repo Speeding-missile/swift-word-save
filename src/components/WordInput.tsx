@@ -12,6 +12,7 @@ interface WordInputProps {
 
 export function WordInput({ onSubmit, existingWords = [] }: WordInputProps) {
   const [value, setValue] = useState("");
+  const [duplicateInfo, setDuplicateInfo] = useState<{ word: string; folder: string } | null>(null);
   const { validate, validationResult, validating, clearValidation } = useWordValidation();
   const [showDropdown, setShowDropdown] = useState(false);
   const [dictionarySuggestions, setDictionarySuggestions] = useState<string[]>([]);
@@ -95,10 +96,22 @@ export function WordInput({ onSubmit, existingWords = [] }: WordInputProps) {
   const handleSubmit = async () => {
     if (!value.trim()) return;
     setShowDropdown(false);
+    setDuplicateInfo(null);
+
+    // Check if word already exists
+    const existing = existingWords.find(
+      (w) => w.word.toLowerCase() === value.trim().toLowerCase()
+    );
+    if (existing) {
+      setDuplicateInfo({ word: existing.word, folder: existing.folder });
+      return;
+    }
+
     const isValid = await validate(value.trim());
     if (isValid) {
       onSubmit(value.trim());
       setValue("");
+      setDuplicateInfo(null);
     }
   };
 
@@ -125,6 +138,8 @@ export function WordInput({ onSubmit, existingWords = [] }: WordInputProps) {
         className={`flex items-center gap-2 rounded-lg border p-2 transition-colors focus-within:border-foreground ${
           validationResult && !validationResult.isValid
             ? "border-destructive bg-destructive/5"
+            : duplicateInfo
+            ? "border-amber-500 bg-amber-500/5"
             : "border-border bg-card"
         }`}
       >
@@ -135,6 +150,7 @@ export function WordInput({ onSubmit, existingWords = [] }: WordInputProps) {
           onChange={(e) => {
             setValue(e.target.value);
             if (validationResult) clearValidation();
+            if (duplicateInfo) setDuplicateInfo(null);
           }}
           onKeyDown={handleKeyDown}
           onFocus={() => {
@@ -232,6 +248,30 @@ export function WordInput({ onSubmit, existingWords = [] }: WordInputProps) {
                 ))}
               </div>
             )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Duplicate word notice */}
+      <AnimatePresence>
+        {duplicateInfo && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="mt-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-2.5"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <Archive size={12} className="text-amber-600 dark:text-amber-400" />
+                <span className="font-mono text-xs text-amber-700 dark:text-amber-300">
+                  <strong>{duplicateInfo.word}</strong> already saved in <strong>{duplicateInfo.folder}</strong>
+                </span>
+              </div>
+              <button onClick={() => setDuplicateInfo(null)} className="text-muted-foreground hover:text-foreground">
+                <X size={12} />
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
