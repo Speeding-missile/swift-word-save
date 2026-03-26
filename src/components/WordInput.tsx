@@ -96,10 +96,22 @@ export function WordInput({ onSubmit, existingWords = [] }: WordInputProps) {
   const handleSubmit = async () => {
     if (!value.trim()) return;
     setShowDropdown(false);
+    setDuplicateInfo(null);
+
+    // Check if word already exists
+    const existing = existingWords.find(
+      (w) => w.word.toLowerCase() === value.trim().toLowerCase()
+    );
+    if (existing) {
+      setDuplicateInfo({ word: existing.word, folder: existing.folder });
+      return;
+    }
+
     const isValid = await validate(value.trim());
     if (isValid) {
       onSubmit(value.trim());
       setValue("");
+      setDuplicateInfo(null);
     }
   };
 
