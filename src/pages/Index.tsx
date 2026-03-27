@@ -10,6 +10,7 @@ import { QuizSection } from "@/components/QuizSection";
 import { FlashcardsSection } from "@/components/FlashcardsSection";
 import { GraphNetworkView } from "@/components/GraphNetworkView";
 import { ConnectorLine } from "@/components/ConnectorLine";
+import { BottomNav, type MobileTab } from "@/components/BottomNav";
 import { useTheme } from "@/hooks/useTheme";
 import { useWordStore } from "@/hooks/useWordStore";
 import { getPersonalityStatement } from "@/lib/wordCategories";
@@ -22,6 +23,7 @@ const Index = () => {
   const [pendingWord, setPendingWord] = useState<string | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [showGraph, setShowGraph] = useState(false);
+  const [mobileTab, setMobileTab] = useState<MobileTab>("dashboard");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,11 +54,11 @@ const Index = () => {
   };
 
   return (
-    <div className="h-screen bg-background overflow-hidden relative flex flex-col justify-center">
-      <div className="mx-auto w-full max-w-[2400px] h-full px-4 sm:px-8 py-6 grid grid-cols-1 lg:grid-cols-3 items-stretch gap-6 lg:gap-8">
+    <div className="h-screen bg-background overflow-hidden relative flex flex-col items-stretch">
+      <div className="mx-auto w-full max-w-[2400px] h-full px-4 sm:px-8 py-4 lg:py-6 grid grid-cols-1 lg:grid-cols-3 items-stretch gap-6 lg:gap-8 pb-20 lg:pb-6">
 
         {/* ── Left Column: Word Folders ── */}
-        <div className="hidden lg:flex w-full h-full flex-col col-start-1">
+        <div className={`${mobileTab === "folders" ? "flex" : "hidden"} lg:flex w-full h-full flex-col lg:col-start-1`}>
           <div className="bg-card/80 backdrop-blur-xl border border-border shadow-md rounded-2xl h-full flex flex-col overflow-hidden">
             <div className="flex items-center gap-2 p-4 border-b border-border/50 bg-secondary/30">
               <Folder size={14} className="text-primary" />
@@ -76,7 +78,7 @@ const Index = () => {
         </div>
 
         {/* ── Center Column: Dashboard ── */}
-        <div className="w-full h-full flex flex-col relative z-10 col-start-1 lg:col-start-2 overflow-y-auto custom-scrollbar pb-8">
+        <div className={`${mobileTab === "dashboard" ? "flex" : "hidden"} lg:flex w-full h-full flex-col relative z-10 lg:col-start-2 overflow-y-auto custom-scrollbar pb-8`}>
 
           {/* Header */}
           <motion.header
@@ -136,7 +138,7 @@ const Index = () => {
         </div>
 
         {/* ── Right Column: My Tools ── */}
-        <div className="hidden lg:flex flex-col h-full col-start-3 w-full">
+        <div className={`${mobileTab === "tools" ? "flex" : "hidden"} lg:flex flex-col h-full lg:col-start-3 w-full`}>
           <div className="bg-card/80 backdrop-blur-xl border border-border shadow-md rounded-2xl h-full flex flex-col overflow-hidden">
             <div className="flex items-center gap-2 p-4 border-b border-border/50 bg-secondary/30 flex-shrink-0">
               <Wrench size={14} className="text-primary" />
@@ -154,6 +156,9 @@ const Index = () => {
       </div>
 
       {showGraph && <GraphNetworkView words={words} onClose={() => setShowGraph(false)} />}
+      
+      {/* Mobile Bottom Nav */}
+      <BottomNav activeTab={mobileTab} onTabChange={setMobileTab} />
     </div>
   );
 };

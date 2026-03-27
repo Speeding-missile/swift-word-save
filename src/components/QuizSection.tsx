@@ -22,6 +22,7 @@ interface QuizSectionProps {
   selectedFolder: string | null;
 }
 
+// Main quiz component
 export function QuizSection({ words, folders, selectedFolder }: QuizSectionProps) {
   const [mode, setMode] = useState<QuizMode>("random");
   const [question, setQuestion] = useState<QuizQuestion | null>(null);
