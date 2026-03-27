@@ -135,13 +135,12 @@ export function WordInput({ onSubmit, existingWords = [] }: WordInputProps) {
   return (
     <div className="relative">
       <div
-        className={`flex items-center gap-2 rounded-lg border p-2 transition-colors focus-within:border-foreground ${
-          validationResult && !validationResult.isValid
+        className={`flex h-full items-center gap-1 rounded-lg border p-1 transition-colors focus-within:border-foreground ${validationResult && !validationResult.isValid
             ? "border-destructive bg-destructive/5"
             : duplicateInfo
-            ? "border-amber-500 bg-amber-500/5"
-            : "border-border bg-card"
-        }`}
+              ? "border-amber-500 bg-amber-500/5"
+              : "border-border bg-card"
+          }`}
       >
         <input
           ref={inputRef}
@@ -159,25 +158,24 @@ export function WordInput({ onSubmit, existingWords = [] }: WordInputProps) {
               setShowDropdown(true);
             }
           }}
-          placeholder="Type a new word..."
-          className="flex-1 bg-transparent px-2 py-2 font-mono text-lg outline-none placeholder:text-muted-foreground"
+          placeholder="word..."
+          className="flex-1 min-w-0 bg-transparent px-1 py-1 font-mono text-sm outline-none placeholder:text-muted-foreground"
         />
 
         <button
           onClick={toggleVoice}
-          className={`relative flex h-10 w-10 items-center justify-center rounded-md transition-colors ${
-            isListening ? "bg-foreground text-background" : "hover:bg-accent"
-          }`}
+          className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors ${isListening ? "bg-foreground text-background" : "hover:bg-accent"
+            }`}
           aria-label={isListening ? "Stop listening" : "Start voice input"}
         >
           <AnimatePresence mode="wait">
             {isListening ? (
               <motion.div key="off" initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }}>
-                <MicOff size={18} />
+                <MicOff size={14} />
               </motion.div>
             ) : (
               <motion.div key="on" initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }}>
-                <Mic size={18} />
+                <Mic size={14} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -189,10 +187,10 @@ export function WordInput({ onSubmit, existingWords = [] }: WordInputProps) {
         <button
           onClick={handleSubmit}
           disabled={!value.trim() || validating}
-          className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground transition-opacity disabled:opacity-30"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground transition-opacity disabled:opacity-30"
           aria-label="Add word"
         >
-          <Plus size={18} />
+          <Plus size={14} />
         </button>
       </div>
 

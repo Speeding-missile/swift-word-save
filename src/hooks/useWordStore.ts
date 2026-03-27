@@ -5,6 +5,7 @@ export interface WordEntry {
   word: string;
   folder: string;
   createdAt: number;
+  aiDistractors?: string[]; // Cached AI options so the model never re-runs for the same word
 }
 
 export interface Folder {
@@ -47,6 +48,10 @@ export function useWordStore() {
     setWords((prev) => prev.filter((w) => w.id !== id));
   }, []);
 
+  const updateWord = useCallback((id: string, patch: Partial<WordEntry>) => {
+    setWords((prev) => prev.map((w) => w.id === id ? { ...w, ...patch } : w));
+  }, []);
+
   const folders: Folder[] = (() => {
     const map: Record<string, number> = {};
     words.forEach((w) => {
@@ -73,5 +78,36 @@ export function useWordStore() {
     URL.revokeObjectURL(url);
   }, [words]);
 
-  return { words, addWord, deleteWord, folders, quickFolders, exportWords };
+  const importWords = useCallback((tsvContent: string) => {
+    const lines = tsvContent.split('\n');
+    let importedCount = 0;
+    const newWords: WordEntry[] = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+       if (i === 0 && lines[i].toLowerCase().startsWith('word\t')) continue;
+       if (!lines[i].trim()) continue;
+       
+       const [word, folder] = lines[i].split('\t');
+       if (word && word.trim()) {
+           newWords.push({
+               id: crypto.randomUUID(),
+               word: word.trim(),
+               folder: folder ? folder.trim() : 'Imported',
+               createdAt: Date.now() + i,
+           });
+           importedCount++;
+       }
+    }
+    
+    if (newWords.length > 0) {
+       setWords(prev => {
+          const existingWords = new Set(prev.map(w => w.word.toLowerCase()));
+          const filteredNew = newWords.filter(w => !existingWords.has(w.word.toLowerCase()));
+          return [...filteredNew, ...prev];
+       });
+    }
+    return importedCount;
+  }, []);
+
+  return { words, addWord, deleteWord, updateWord, folders, quickFolders, exportWords, importWords };
 }
