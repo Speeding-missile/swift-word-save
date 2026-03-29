@@ -77,7 +77,7 @@ const Index = () => {
             animate={{ opacity: 1, y: 0 }}
             className="flex-shrink-0 mb-4 flex items-center justify-between"
           >
-            <h1 className="font-mono text-sm font-bold tracking-tight glow-text"></h1>
+            <h1 className="font-mono text-sm font-bold tracking-tight glow-text">vocabulary(Vault)</h1>
             <div className="flex items-center gap-1.5">
               {words.length > 0 && (
                 <>
@@ -142,10 +142,7 @@ const Index = () => {
           </div>
         </div>
 
-        {/* ── Mobile Tasks Tab (exclusive to mobile) ── */}
-        <div className={`${mobileTab === "tasks" ? "flex" : "hidden"} lg:hidden flex-col h-full w-full p-4 overflow-y-auto custom-scrollbar pt-8`}>
-          <TodoSection />
-        </div>
+
 
       </div>
 
