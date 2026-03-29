@@ -63,9 +63,8 @@ function TodoItem({ todo, isFirst, isLast }: { todo: Todo; isFirst: boolean; isL
 
       <button
         onClick={() => toggleTodo(todo.id)}
-        className={`flex-shrink-0 h-4 w-4 rounded-full border flex items-center justify-center transition-all ${
-          todo.completed ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/30 hover:border-primary'
-        }`}
+        className={`flex-shrink-0 h-4 w-4 rounded-full border flex items-center justify-center transition-all ${todo.completed ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/30 hover:border-primary'
+          }`}
       >
         {todo.completed && <Check size={8} strokeWidth={4} />}
       </button>
@@ -164,17 +163,17 @@ export function TodoSection() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex flex-col">
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Focus</p>
-          <h3 className="font-mono text-xs font-bold uppercase tracking-tight">Today's Tasks</h3>
+          <h3 className="font-mono text-xs font-bold uppercase tracking-tight">Tasks</h3>
         </div>
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setShowCompleted(!showCompleted)}
             className={`p-1.5 rounded-lg border border-border transition-all hover:bg-accent font-mono text-[9px] uppercase font-bold flex items-center gap-1.5 ${showCompleted ? 'text-primary border-primary/30' : 'text-muted-foreground'}`}
           >
-             {showCompleted ? <ChevronUp size={10}/> : <ChevronDown size={10}/>}
-             {showCompleted ? "Hide Done" : "View Done"}
+            {showCompleted ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+            {showCompleted ? "Hide Done" : "View Done"}
           </button>
-          
+
           {todos.length > 0 && (
             <button
               onClick={handleDeleteAll}
@@ -206,18 +205,18 @@ export function TodoSection() {
               <Plus size={16} />
             </button>
           </div>
-          
+
           <div className="flex items-center gap-3 px-2 py-1 border-t border-border/20 pt-1.5 mt-0.5">
-             <span className="font-mono text-[8px] uppercase font-bold text-muted-foreground/50 tracking-tighter">Category:</span>
-             <div className="flex items-center gap-2">
-                {TODO_COLORS.map((c, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedColor(idx)}
-                    className={`h-2.5 w-2.5 rounded-full ${c.dot} transition-all hover:scale-125 ${selectedColor === idx ? 'ring-2 ring-offset-2 ring-offset-card ring-primary' : 'opacity-40 hover:opacity-100'}`}
-                  />
-                ))}
-             </div>
+            <span className="font-mono text-[8px] uppercase font-bold text-muted-foreground/50 tracking-tighter">Category:</span>
+            <div className="flex items-center gap-2">
+              {TODO_COLORS.map((c, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedColor(idx)}
+                  className={`h-2.5 w-2.5 rounded-full ${c.dot} transition-all hover:scale-125 ${selectedColor === idx ? 'ring-2 ring-offset-2 ring-offset-card ring-primary' : 'opacity-40 hover:opacity-100'}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
@@ -226,11 +225,11 @@ export function TodoSection() {
           <div className="space-y-2">
             <AnimatePresence mode="popLayout" initial={false}>
               {activeTodos.map((todo, idx) => (
-                <TodoItem 
-                  key={todo.id} 
-                  todo={todo} 
-                  isFirst={idx === 0} 
-                  isLast={idx === activeTodos.length - 1} 
+                <TodoItem
+                  key={todo.id}
+                  todo={todo}
+                  isFirst={idx === 0}
+                  isLast={idx === activeTodos.length - 1}
                 />
               ))}
             </AnimatePresence>
@@ -254,11 +253,11 @@ export function TodoSection() {
               >
                 <div className="space-y-2">
                   {completedTodos.map((todo, idx) => (
-                    <TodoItem 
-                      key={todo.id} 
-                      todo={todo} 
-                      isFirst={idx === 0} 
-                      isLast={idx === completedTodos.length - 1} 
+                    <TodoItem
+                      key={todo.id}
+                      todo={todo}
+                      isFirst={idx === 0}
+                      isLast={idx === completedTodos.length - 1}
                     />
                   ))}
                 </div>
