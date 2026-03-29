@@ -32,7 +32,7 @@ self.addEventListener('message', async (event) => {
        return;
     }
 
-    // Generation request
+    // Generation request (general)
     if (event.data.type === 'generate') {
        const result = await generator(event.data.text, {
           max_new_tokens: 150,
@@ -42,6 +42,28 @@ self.addEventListener('message', async (event) => {
 
        self.postMessage({
           status: 'complete',
+          output: result,
+       });
+    }
+
+    // Word Detail generation request (specifically structured)
+    if (event.data.type === 'getWordDetails') {
+       const prompt = `Task: Provide dictionary details for the English word "${event.data.word}".
+Rule: Output strictly in this format: 
+Phonetic: [approximate phonetic spelling]
+Meaning: [concise definition]
+Usage: [a natural example sentence using the word]
+No extra text, no conversation, no markdown formatting.`;
+
+       const result = await generator(prompt, {
+          max_new_tokens: 150,
+          temperature: 0.5, // lower temperature for more consistent formatting
+          repetition_penalty: 1.1,
+       });
+
+       self.postMessage({
+          status: 'completeDetails',
+          word: event.data.word,
           output: result,
        });
     }

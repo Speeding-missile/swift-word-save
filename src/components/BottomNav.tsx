@@ -1,7 +1,7 @@
-import { Folder, LayoutDashboard, Wrench } from "lucide-react";
+import { Folder, LayoutDashboard, Wrench, ListTodo } from "lucide-react";
 import { motion } from "framer-motion";
 
-export type MobileTab = "folders" | "dashboard" | "tools";
+export type MobileTab = "folders" | "dashboard" | "tools" | "tasks";
 
 interface BottomNavProps {
   activeTab: MobileTab;
@@ -13,6 +13,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
     { id: "folders" as MobileTab, label: "Folders", icon: Folder },
     { id: "dashboard" as MobileTab, label: "Vault", icon: LayoutDashboard },
     { id: "tools" as MobileTab, label: "Tools", icon: Wrench },
+    { id: "tasks" as MobileTab, label: "Tasks", icon: ListTodo },
   ];
 
   return (

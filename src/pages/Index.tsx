@@ -1,14 +1,13 @@
-import { useState, useMemo, useRef } from "react";
-import { Download, Upload, Network, Folder, Wrench } from "lucide-react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { Download, Upload, Folder, Wrench } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { SettingsPanel } from "@/components/SettingsPanel";
 import { WordInput } from "@/components/WordInput";
-import { FolderPicker } from "@/components/FolderPicker";
 import { FolderTicker } from "@/components/FolderTicker";
 import { WordDiscovery } from "@/components/WordDiscovery";
 import { QuizSection } from "@/components/QuizSection";
+import { TodoSection } from "@/components/TodoSection";
 import { FlashcardsSection } from "@/components/FlashcardsSection";
-import { GraphNetworkView } from "@/components/GraphNetworkView";
 import { ConnectorLine } from "@/components/ConnectorLine";
 import { BottomNav, type MobileTab } from "@/components/BottomNav";
 import { useTheme } from "@/hooks/useTheme";
@@ -19,8 +18,7 @@ export type SectionType = "folders" | "quiz" | null;
 
 const Index = () => {
   const { isDark, toggle } = useTheme();
-  const { words, addWord, deleteWord, folders, quickFolders, exportWords, importWords } = useWordStore();
-  const [pendingWord, setPendingWord] = useState<string | null>(null);
+  const { words, addWord, deleteWord, deleteFolder, folders, quickFolders, exportWords, importWords } = useWordStore();
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [showGraph, setShowGraph] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>("dashboard");
@@ -42,15 +40,8 @@ const Index = () => {
 
   const personality = useMemo(() => getPersonalityStatement(words), [words]);
 
-  const handleWordSubmit = (word: string) => {
-    setPendingWord(word);
-  };
-
-  const handleSave = (folder: string) => {
-    if (pendingWord) {
-      addWord(pendingWord, folder);
-      setPendingWord(null);
-    }
+  const handleWordSubmit = (word: string, folder: string = "General") => {
+    addWord(word, folder);
   };
 
   return (
@@ -70,6 +61,7 @@ const Index = () => {
                 words={words}
                 folders={folders}
                 onDelete={deleteWord}
+                onDeleteFolder={deleteFolder}
                 onSelectFolder={setSelectedFolder}
                 selectedFolder={selectedFolder}
               />
@@ -78,62 +70,57 @@ const Index = () => {
         </div>
 
         {/* ── Center Column: Dashboard ── */}
-        <div className={`${mobileTab === "dashboard" ? "flex" : "hidden"} lg:flex w-full h-full flex-col relative z-10 lg:col-start-2 overflow-y-auto custom-scrollbar pb-8`}>
+        <div className={`${mobileTab === "dashboard" ? "flex" : "hidden"} lg:flex w-full h-full flex-col relative z-10 lg:col-start-2 min-h-0`}>
 
           {/* Header */}
           <motion.header
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-3 flex items-center justify-between"
+            className="flex-shrink-0 mb-4 flex items-center justify-between"
           >
             <h1 className="font-mono text-sm font-bold tracking-tight glow-text">word(vault)</h1>
             <div className="flex items-center gap-1.5">
               {words.length > 0 && (
                 <>
-                  <button onClick={() => setShowGraph(true)} className="flex h-6 items-center gap-1 rounded-full border border-border px-2 font-mono text-[9px] transition-colors hover:bg-accent"><Network size={9} />Graph</button>
                   <button onClick={() => fileInputRef.current?.click()} className="flex h-6 items-center gap-1 rounded-full border border-border px-2 font-mono text-[9px] transition-colors hover:bg-accent"><Upload size={9} />Import</button>
                   <input type="file" accept=".tsv,.txt,.csv" className="hidden" ref={fileInputRef} onChange={handleImport} />
                   <button onClick={exportWords} className="flex h-6 items-center gap-1 rounded-full border border-border px-2 font-mono text-[9px] transition-colors hover:bg-accent"><Download size={9} />Export</button>
                 </>
               )}
-              <ThemeToggle isDark={isDark} toggle={toggle} />
+              <SettingsPanel isDark={isDark} toggleTheme={toggle} />
             </div>
           </motion.header>
 
-          {/* Word Discovery */}
-          <WordDiscovery onSaveRequest={handleWordSubmit} />
+          <div className="flex-1 overflow-y-auto custom-scrollbar no-scrollbar pb-10 space-y-6">
 
-          {/* Personality + Input */}
-          <div className="my-3 flex flex-col gap-1">
-            <AnimatePresence>
-              {personality && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                  <p className="font-mono text-[11px] text-muted-foreground px-1 line-clamp-1">
-                    {personality.statement} <span className="opacity-50">({personality.category.toLowerCase()})</span>
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="w-full">
-              <WordInput onSubmit={handleWordSubmit} existingWords={words} />
-            </motion.div>
-          </div>
+            {/* Personality + Search Component (Inline) */}
+            <div className="flex flex-col gap-2">
+              <AnimatePresence>
+                {personality && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden mb-1">
+                    <p className="font-mono text-[10px] text-muted-foreground/40 px-2 uppercase font-bold tracking-[0.1em]">
+                      {personality.statement}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-          {/* Folder Picker (save word) */}
-          <div className="mb-4">
-            <FolderPicker
-              folders={folders}
-              quickFolders={quickFolders}
-              onSave={handleSave}
-              pendingWord={pendingWord}
-              onCancel={() => setPendingWord(null)}
-            />
-          </div>
+              <div className="relative">
+                <WordInput
+                  onSubmit={(w, f) => { handleWordSubmit(w, f); }}
+                  existingWords={words}
+                />
+              </div>
+            </div>
 
-          {/* Quiz */}
-          <div className="p-4 rounded-2xl border border-border bg-card/60 backdrop-blur-sm">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">Quiz</p>
-            <QuizSection words={words} folders={folders} selectedFolder={selectedFolder} />
+            {/* Word Discovery */}
+            <WordDiscovery onSaveRequest={handleWordSubmit} />
+
+            {/* Quiz */}
+            <div className="p-4 rounded-2xl border border-border bg-card/60 backdrop-blur-sm">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">Quiz</p>
+              <QuizSection words={words} folders={folders} selectedFolder={selectedFolder} />
+            </div>
           </div>
         </div>
 
@@ -149,14 +136,23 @@ const Index = () => {
                 <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">Flashcards</p>
                 <FlashcardsSection />
               </div>
+              <div className="mt-8">
+                <TodoSection />
+              </div>
             </div>
           </div>
         </div>
 
+        {/* ── Mobile Tasks Tab (exclusive to mobile) ── */}
+        <div className={`${mobileTab === "tasks" ? "flex" : "hidden"} lg:hidden flex-col h-full w-full p-4 overflow-y-auto custom-scrollbar pt-8`}>
+           <TodoSection />
+        </div>
+
       </div>
 
-      {showGraph && <GraphNetworkView words={words} onClose={() => setShowGraph(false)} />}
-      
+      {/* Graph view removed as requested */}
+
+
       {/* Mobile Bottom Nav */}
       <BottomNav activeTab={mobileTab} onTabChange={setMobileTab} />
     </div>

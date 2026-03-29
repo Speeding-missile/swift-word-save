@@ -4,6 +4,7 @@ import {
   BookOpen, Settings2, ArrowLeft, RefreshCw, X, Pencil
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Flashcard as FlashcardComp } from "./Flashcard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Flashcard {
@@ -35,67 +36,6 @@ function loadDecks(): Deck[] {
 function saveDecks(decks: Deck[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(decks));
 }
-
-// ─── Flip Card ────────────────────────────────────────────────────────────────
-function FlipCard({ card, onGreen, onRed }: {
-  card: Flashcard;
-  onGreen: () => void;
-  onRed: () => void;
-}) {
-  const [flipped, setFlipped] = useState(false);
-
-  return (
-    <div
-      className="relative w-full cursor-pointer select-none"
-      style={{ perspective: "1000px", minHeight: "200px" }}
-      onClick={() => !flipped && setFlipped(true)}
-    >
-      <motion.div
-        className="relative w-full h-full"
-        initial={false}
-        animate={{ rotateY: flipped ? 180 : 0 }}
-        transition={{ duration: 0.55, type: "spring", stiffness: 110, damping: 14 }}
-        style={{ transformStyle: "preserve-3d" }}
-      >
-        {/* ── Front ── */}
-        <div
-          className="absolute inset-0 rounded-2xl border border-border bg-gradient-to-br from-card to-secondary/30 p-5 flex flex-col items-center justify-center gap-3"
-          style={{ backfaceVisibility: "hidden", minHeight: "200px" }}
-        >
-          <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/60">Question</span>
-          <p className="font-mono text-sm font-semibold text-center leading-relaxed px-2">{card.question}</p>
-          <span className="mt-2 font-mono text-[11px] text-primary/50 animate-pulse">Tap to flip →</span>
-        </div>
-
-        {/* ── Back ── */}
-        <div
-          className="absolute inset-0 rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-card p-5 flex flex-col items-center justify-center gap-3"
-          style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)", minHeight: "200px" }}
-          onClick={e => e.stopPropagation()}
-        >
-          <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/60">Answer</span>
-          <p className="font-mono text-sm text-center leading-relaxed px-2">{card.answer}</p>
-          <div className="flex items-center gap-3 mt-3">
-            <button
-              onClick={e => { e.stopPropagation(); setFlipped(false); onRed(); }}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/30 text-red-500 font-mono text-[11px] hover:bg-red-500/20 transition-colors"
-            >
-              <XCircle size={13} /> Need Practice
-            </button>
-            <button
-              onClick={e => { e.stopPropagation(); setFlipped(false); onGreen(); }}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/30 text-green-500 font-mono text-[11px] hover:bg-green-500/20 transition-colors"
-            >
-              <CheckCircle2 size={13} /> Got it!
-            </button>
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
-// ─── Bulk Create Modal ────────────────────────────────────────────────────────
 function BulkCreateModal({ onClose, onAdd }: {
   onClose: () => void;
   onAdd: (cards: Array<{ question: string; answer: string }>) => void;
@@ -248,7 +188,17 @@ function SessionMode({ cards, onEndSession, onImproveList }: {
   onEndSession: () => void;
   onImproveList: (ids: string[]) => void;
 }) {
-  const [queue, setQueue] = useState<Flashcard[]>(() => [...cards].sort(() => Math.random() - 0.5));
+  // Proper Fisher-Yates Shuffle
+  const shuffleCards = (array: Flashcard[]) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  const [queue, setQueue] = useState<Flashcard[]>(() => shuffleCards(cards));
   const [currentIdx, setCurrentIdx] = useState(0);
   const [wrongIds, setWrongIds] = useState<string[]>([]);
   const [done, setDone] = useState(false);
@@ -265,7 +215,7 @@ function SessionMode({ cards, onEndSession, onImproveList }: {
 
   const handleTryAgain = () => {
     const wrongCards = cards.filter(c => wrongIds.includes(c.id));
-    setQueue(wrongCards.sort(() => Math.random() - 0.5));
+    setQueue(shuffleCards(wrongCards));
     setCurrentIdx(0);
     setWrongIds([]);
     setDone(false);
@@ -352,7 +302,7 @@ function SessionMode({ cards, onEndSession, onImproveList }: {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -30 }}
         >
-          <FlipCard card={current} onGreen={handleGreen} onRed={handleRed} />
+          <FlashcardComp question={current.question} answer={current.answer} onGreen={handleGreen} onRed={handleRed} />
         </motion.div>
       </AnimatePresence>
     </div>
