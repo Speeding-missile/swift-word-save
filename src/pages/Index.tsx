@@ -77,7 +77,7 @@ const Index = () => {
             animate={{ opacity: 1, y: 0 }}
             className="flex-shrink-0 mb-4 flex items-center justify-between"
           >
-            <h1 className="font-mono text-sm font-bold tracking-tight glow-text">vocabulary(Vault)</h1>
+            <h1 className="font-mono text-sm font-bold tracking-tight glow-text">vocabulary(vault)</h1>
             <div className="flex items-center gap-1.5">
               {words.length > 0 && (
                 <>
