@@ -24,12 +24,28 @@ const STORAGE_KEY = "wordvault_decks_v2";
 function loadDecks(): Deck[] {
   try {
     const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-    if (Array.isArray(raw) && raw.length >= 3) return raw;
+
+    // If the user already has saved decks, ensure they have at least 5
+    if (Array.isArray(raw) && raw.length > 0) {
+      const currentDecks = [...raw];
+      while (currentDecks.length < 5) {
+        currentDecks.push({
+          id: crypto.randomUUID(),
+          title: `Deck ${currentDecks.length + 1}`,
+          cards: []
+        });
+      }
+      return currentDecks;
+    }
   } catch { /* ignore */ }
+
+  // The new default starting state (5 Decks)
   return [
     { id: crypto.randomUUID(), title: "Deck 1", cards: [] },
     { id: crypto.randomUUID(), title: "Deck 2", cards: [] },
     { id: crypto.randomUUID(), title: "Deck 3", cards: [] },
+    { id: crypto.randomUUID(), title: "Deck 4", cards: [] },
+    { id: crypto.randomUUID(), title: "Deck 5", cards: [] },
   ];
 }
 
@@ -421,11 +437,10 @@ export function FlashcardsSection() {
           <div
             key={deck.id}
             onClick={() => setActiveTab(i)}
-            className={`relative flex items-center gap-1.5 px-3 py-2 rounded-t-lg cursor-pointer transition-all duration-200 max-w-[120px] flex-1 ${
-              i === activeTab
+            className={`relative flex items-center gap-1.5 px-3 py-2 rounded-t-lg cursor-pointer transition-all duration-200 max-w-[120px] flex-1 ${i === activeTab
                 ? "bg-card border border-border border-b-card text-foreground shadow-sm z-10"
                 : "bg-secondary/30 text-muted-foreground hover:bg-secondary/60"
-            }`}
+              }`}
             style={{ marginBottom: i === activeTab ? "-1px" : "0" }}
           >
             {editingTabId === deck.id ? (
