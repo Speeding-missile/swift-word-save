@@ -1,19 +1,19 @@
-import { Folder, LayoutDashboard, Wrench, ListTodo } from "lucide-react";
+import { Folder, LayoutDashboard, Wrench } from "lucide-react";
 import { motion } from "framer-motion";
 
-export type MobileTab = "folders" | "dashboard" | "tools" | "tasks";
+export type MobileTab = "folders" | "dashboard" | "tools";
 
 interface BottomNavProps {
-  activeTab: MobileTab;
-  onTabChange: (tab: MobileTab) => void;
+  activeTab: MobileTab | string;
+  onTabChange: (tab: any) => void;
 }
 
 export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
+  // Removed the 'tasks' tab from this array
   const tabs = [
     { id: "folders" as MobileTab, label: "Folders", icon: Folder },
     { id: "dashboard" as MobileTab, label: "Vault", icon: LayoutDashboard },
     { id: "tools" as MobileTab, label: "Tools", icon: Wrench },
-    { id: "tasks" as MobileTab, label: "Tasks", icon: ListTodo },
   ];
 
   return (
@@ -22,14 +22,13 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
-          
+
           return (
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`relative flex flex-col items-center justify-center py-2 px-1 flex-1 transition-colors duration-300 ${
-                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={`relative flex flex-col items-center justify-center py-2 px-1 flex-1 transition-colors duration-300 ${isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                }`}
             >
               {isActive && (
                 <motion.div
