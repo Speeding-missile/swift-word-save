@@ -6,6 +6,7 @@ export interface WordEntry {
   word: string;
   folder: string;
   createdAt: number;
+  needsPractice?: boolean; // Tracks if a word was marked "wrong"
 }
 
 export interface Folder {
@@ -16,33 +17,29 @@ export interface Folder {
 interface WordStore {
   words: WordEntry[];
   folderNames: string[];
-  folders: Folder[]; // Pre-computed for convenience
-  quickFolders: Folder[]; // Pre-computed
-  addWord: (word: string, folder: string) => void;
+  folders: Folder[];
+  addWord: (word: string, folder?: string) => void;
   addFolder: (name: string) => void;
   deleteWord: (id: string) => void;
   deleteFolder: (name: string) => void;
   updateWord: (id: string, patch: Partial<WordEntry>) => void;
+  togglePractice: (id: string, needsPractice: boolean) => void; // Permanent practice toggle
+  clearPracticeLog: () => void; // Resets all "wrong" marks
   importWords: (tsvContent: string) => number;
   exportWords: () => void;
 }
 
+// Optimized single-pass folder calculation
 const computeFolders = (words: WordEntry[], folderNames: string[]) => {
   const counts: Record<string, number> = {};
-  
-  // Normalize both words and folderNames to ensure "General" is the anchor
   words.forEach((w) => {
     const canonical = w.folder.toLowerCase() === "general" ? "General" : w.folder;
     counts[canonical] = (counts[canonical] || 0) + 1;
   });
 
-  // Deduplicate folderNames (case-insensitive, prioritizing General)
-  const dedupedNames = new Set<string>(["General"]);
-  folderNames.forEach(name => {
-    if (name.toLowerCase() !== "general") dedupedNames.add(name);
-  });
+  const dedupedNames = new Set<string>(["General", ...folderNames]);
 
-  const all = Array.from(dedupedNames)
+  return Array.from(dedupedNames)
     .map((name) => ({
       name,
       count: counts[name] || 0,
@@ -52,11 +49,6 @@ const computeFolders = (words: WordEntry[], folderNames: string[]) => {
       if (b.name === "General") return 1;
       return b.count - a.count;
     });
-  
-  return {
-    folders: all,
-    quickFolders: all.slice(0, 4)
-  };
 };
 
 export const useWordStore = create<WordStore>()(
@@ -65,7 +57,6 @@ export const useWordStore = create<WordStore>()(
       words: [],
       folderNames: ["General"],
       folders: [{ name: "General", count: 0 }],
-      quickFolders: [{ name: "General", count: 0 }],
 
       addWord: (word, folder) => {
         let folderName = (folder || "General").trim();
@@ -76,118 +67,128 @@ export const useWordStore = create<WordStore>()(
           word: (word || "").trim(),
           folder: folderName,
           createdAt: Date.now(),
+          needsPractice: false,
         };
 
         set((state) => {
-          // Normalize existing words to "General" if needed
-          const normalizedWords = [newWord, ...state.words].map(w => 
-            w.folder.toLowerCase() === "general" ? { ...w, folder: "General" } : w
-          );
-          
-          const newFolderNames = state.folderNames.some(f => f.toLowerCase() === folderName.toLowerCase())
+          const nextWords = [newWord, ...state.words];
+          const nextFolderNames = state.folderNames.some(f => f.toLowerCase() === folderName.toLowerCase())
             ? state.folderNames
             : [...state.folderNames, folderName];
-          
-          const { folders, quickFolders } = computeFolders(normalizedWords, newFolderNames);
-          return { words: normalizedWords, folderNames: newFolderNames, folders, quickFolders };
+
+          return {
+            words: nextWords,
+            folderNames: nextFolderNames,
+            folders: computeFolders(nextWords, nextFolderNames)
+          };
         });
+      },
+
+      // Logic to save "wrong" status permanently
+      togglePractice: (id, needsPractice) => {
+        set((state) => ({
+          words: state.words.map((w) =>
+            w.id === id ? { ...w, needsPractice } : w
+          )
+        }));
+      },
+
+      clearPracticeLog: () => {
+        set((state) => ({
+          words: state.words.map(w => ({ ...w, needsPractice: false }))
+        }));
       },
 
       addFolder: (name) => {
         let trimmed = name.trim();
-        if (!trimmed) return;
-        if (trimmed.toLowerCase() === "general") trimmed = "General";
+        if (!trimmed || trimmed.toLowerCase() === "general") return;
 
         set((state) => {
           if (state.folderNames.some(f => f.toLowerCase() === trimmed.toLowerCase())) return state;
-          const newFolderNames = [...state.folderNames, trimmed];
-          // Also normalize words here just in case
-          const normalizedWords = state.words.map(w => 
-            w.folder.toLowerCase() === "general" ? { ...w, folder: "General" } : w
-          );
-          const { folders, quickFolders } = computeFolders(normalizedWords, newFolderNames);
-          return { words: normalizedWords, folderNames: newFolderNames, folders, quickFolders };
+          const nextFolderNames = [...state.folderNames, trimmed];
+          return {
+            folderNames: nextFolderNames,
+            folders: computeFolders(state.words, nextFolderNames)
+          };
         });
       },
 
       deleteWord: (id) => {
         set((state) => {
-          const newWords = state.words.filter((w) => w.id !== id);
-          const { folders, quickFolders } = computeFolders(newWords, state.folderNames);
-          return { words: newWords, folders, quickFolders };
+          const nextWords = state.words.filter((w) => w.id !== id);
+          return {
+            words: nextWords,
+            folders: computeFolders(nextWords, state.folderNames)
+          };
         });
       },
 
       deleteFolder: (name) => {
-        if (name === "General") return; // Cannot delete General
+        if (name === "General") return;
         set((state) => {
-          // Move words to General
-          const newWords = state.words.map(w => 
+          const nextWords = state.words.map(w =>
             w.folder === name ? { ...w, folder: "General" } : w
           );
-          const newFolderNames = state.folderNames.filter(f => f !== name);
-          const { folders, quickFolders } = computeFolders(newWords, newFolderNames);
-          return { words: newWords, folderNames: newFolderNames, folders, quickFolders };
+          const nextFolderNames = state.folderNames.filter(f => f !== name);
+          return {
+            words: nextWords,
+            folderNames: nextFolderNames,
+            folders: computeFolders(nextWords, nextFolderNames)
+          };
         });
       },
 
       updateWord: (id, patch) => {
         set((state) => {
-          const newWords = state.words.map((w) => (w.id === id ? { ...w, ...patch } : w));
-          const { folders, quickFolders } = computeFolders(newWords, state.folderNames);
-          return { words: newWords, folders, quickFolders };
+          const nextWords = state.words.map((w) => (w.id === id ? { ...w, ...patch } : w));
+          return {
+            words: nextWords,
+            folders: computeFolders(nextWords, state.folderNames)
+          };
         });
       },
 
       importWords: (tsvContent) => {
         const lines = tsvContent.split("\n");
-        let importedCount = 0;
         const newWordsList: WordEntry[] = [];
-        const state = get();
-        const currentFolderNames = new Set(state.folderNames);
+        const currentFolderNames = new Set(get().folderNames);
 
-        for (let i = 0; i < lines.length; i++) {
-          if (i === 0 && lines[i].toLowerCase().startsWith("word\t")) continue;
-          if (!lines[i].trim()) continue;
-
-          const [word, folder] = lines[i].split("\t");
-          if (word && word.trim()) {
-            const folderName = folder ? folder.trim() : "Imported";
+        lines.forEach((line, i) => {
+          if (i === 0 && line.toLowerCase().includes("word")) return;
+          const [word, folder] = line.split("\t");
+          if (word?.trim()) {
+            const folderName = folder?.trim() || "General";
             newWordsList.push({
               id: crypto.randomUUID(),
               word: word.trim(),
               folder: folderName,
               createdAt: Date.now() + i,
+              needsPractice: false,
             });
             currentFolderNames.add(folderName);
-            importedCount++;
           }
-        }
+        });
 
         if (newWordsList.length > 0) {
           set((state) => {
-            const existingWords = new Set(state.words.map((w) => w.word.toLowerCase()));
-            const filteredNew = newWordsList.filter((w) => !existingWords.has(w.word.toLowerCase()));
-            const nextWords = [...filteredNew, ...state.words];
+            const nextWords = [...newWordsList, ...state.words];
             const nextFolderNames = Array.from(currentFolderNames);
-            const { folders, quickFolders } = computeFolders(nextWords, nextFolderNames);
             return {
               words: nextWords,
               folderNames: nextFolderNames,
-              folders,
-              quickFolders
+              folders: computeFolders(nextWords, nextFolderNames)
             };
           });
         }
-        return importedCount;
+        return newWordsList.length;
       },
 
       exportWords: () => {
         const { words } = get();
+        const header = "Word\tFolder\tNeeds Practice\tDate\n";
         const text = words
-          .map((w) => `${w.word}\t${w.folder}\t${new Date(w.createdAt).toLocaleDateString()}`)
+          .map((w) => `${w.word}\t${w.folder}\t${w.needsPractice ? "Yes" : "No"}\t${new Date(w.createdAt).toLocaleDateString()}`)
           .join("\n");
-        const header = "Word\tFolder\tDate\n";
         const blob = new Blob([header + text], { type: "text/tab-separated-values" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -198,7 +199,7 @@ export const useWordStore = create<WordStore>()(
       },
     }),
     {
-      name: "wordvault-storage-v2",
+      name: "wordvault-storage-v2", // Persistent storage key
     }
   )
 );

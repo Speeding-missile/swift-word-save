@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef } from "react"; // Removed unused 'useEffect'
 import { Download, Upload, Folder, Wrench } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SettingsPanel } from "@/components/SettingsPanel";
@@ -8,7 +8,6 @@ import { WordDiscovery } from "@/components/WordDiscovery";
 import { QuizSection } from "@/components/QuizSection";
 import { TodoSection } from "@/components/TodoSection";
 import { FlashcardsSection } from "@/components/FlashcardsSection";
-import { ConnectorLine } from "@/components/ConnectorLine";
 import { BottomNav, type MobileTab } from "@/components/BottomNav";
 import { useTheme } from "@/hooks/useTheme";
 import { useWordStore } from "@/hooks/useWordStore";
@@ -18,20 +17,20 @@ export type SectionType = "folders" | "quiz" | null;
 
 const Index = () => {
   const { isDark, toggle } = useTheme();
-  const { words, addWord, deleteWord, deleteFolder, folders, quickFolders, exportWords, importWords } = useWordStore();
+  const { words, addWord, deleteWord, deleteFolder, folders, exportWords, importWords } = useWordStore(); // Removed unused 'quickFolders'
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-  const [showGraph, setShowGraph] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>("dashboard");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = (event) => {
-      const text = event.target?.result as string;
-      if (text) {
-        importWords(text);
+      // Safely ensure the result is a string before trying to import
+      if (typeof event.target?.result === "string") {
+        importWords(event.target.result);
         if (fileInputRef.current) fileInputRef.current.value = "";
       }
     };
@@ -107,7 +106,7 @@ const Index = () => {
 
               <div className="relative">
                 <WordInput
-                  onSubmit={(w, f) => { handleWordSubmit(w, f); }}
+                  onSubmit={handleWordSubmit}
                   existingWords={words}
                 />
               </div>
@@ -145,13 +144,10 @@ const Index = () => {
 
         {/* ── Mobile Tasks Tab (exclusive to mobile) ── */}
         <div className={`${mobileTab === "tasks" ? "flex" : "hidden"} lg:hidden flex-col h-full w-full p-4 overflow-y-auto custom-scrollbar pt-8`}>
-           <TodoSection />
+          <TodoSection />
         </div>
 
       </div>
-
-      {/* Graph view removed as requested */}
-
 
       {/* Mobile Bottom Nav */}
       <BottomNav activeTab={mobileTab} onTabChange={setMobileTab} />
