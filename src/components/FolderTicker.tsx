@@ -115,12 +115,21 @@ function FolderView({ name, words, onDelete, onBack }: {
           <p className="font-mono text-[11px]">Empty folder</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2 overflow-y-auto custom-scrollbar pr-1 content-start items-start">
-          <AnimatePresence mode="popLayout">
-            {words.map(w => (
-              <WordCard key={w.id} entry={w} onDelete={onDelete} />
-            ))}
-          </AnimatePresence>
+        <div className="flex gap-2 overflow-y-auto custom-scrollbar pr-1 items-start">
+          <div className="flex-1 flex flex-col gap-2">
+            <AnimatePresence mode="popLayout">
+              {words.filter((_, i) => i % 2 === 0).map(w => (
+                <WordCard key={w.id} entry={w} onDelete={onDelete} />
+              ))}
+            </AnimatePresence>
+          </div>
+          <div className="flex-1 flex flex-col gap-2">
+            <AnimatePresence mode="popLayout">
+              {words.filter((_, i) => i % 2 !== 0).map(w => (
+                <WordCard key={w.id} entry={w} onDelete={onDelete} />
+              ))}
+            </AnimatePresence>
+          </div>
         </div>
       )}
     </motion.div>
