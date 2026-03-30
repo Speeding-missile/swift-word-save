@@ -57,36 +57,37 @@ export function WordDiscovery({ onSaveRequest }: { onSaveRequest: (word: string,
     setLoadingStates(prev => ({ ...prev, [selectedFilter]: true }));
 
     try {
-      let url = "";
       const alphabet = "abcdefghijklmnopqrstuvwxyz";
 
-      // REFINED RANDOM LOGIC: Use multiple random letters to break the pattern
-      if (selectedFilter === "random") {
-        const randomChar = alphabet[Math.floor(Math.random() * alphabet.length)];
-        url = `https://api.datamuse.com/words?sp=${randomChar}*&max=100&md=f`;
-      } else {
-        const themes: Record<string, string> = {
-          formal: "scholarly",
-          casual: "colloquial",
-          poetic: "lyrical"
-        };
-        url = `https://api.datamuse.com/words?ml=${themes[selectedFilter]}&max=100&md=f`;
-      }
+      // EXPERT STRATEGY: Fetch from 5 different random letters at once to break patterns
+      const searchPatterns = Array.from({ length: 5 }, () =>
+        alphabet[Math.floor(Math.random() * alphabet.length)] + "??*"
+      );
 
-      const res = await fetch(url);
-      const data = await res.json();
+      const fetchTasks = searchPatterns.map(pattern => {
+        let url = "";
+        if (selectedFilter === "random") {
+          url = `https://api.datamuse.com/words?sp=${pattern}&max=20&md=f`;
+        } else {
+          const themes = { formal: "scholarly", casual: "colloquial", poetic: "lyrical" };
+          url = `https://api.datamuse.com/words?ml=${themes[selectedFilter]}&sp=${pattern}&max=20&md=f`;
+        }
+        return fetch(url).then(res => res.json());
+      });
 
-      // Shuffle candidates to ensure variety
-      const candidates = data
+      const resultsArray = await Promise.all(fetchTasks);
+
+      // Flatten all results and perform a deep shuffle
+      const candidates = resultsArray
+        .flat()
         .map((d: any) => d.word)
         .filter((w: string) => /^[a-z]+$/i.test(w))
         .sort(() => Math.random() - 0.5)
         .slice(0, targetCount * 2);
 
       const newDetails: WordDetail[] = [];
-      // Fetch details in small parallel chunks for speed
-      const results = await Promise.all(candidates.map(w => fetchWordDetails(w)));
-      results.forEach(d => { if (d) newDetails.push(d); });
+      const detailsResults = await Promise.all(candidates.map(w => fetchWordDetails(w)));
+      detailsResults.forEach(d => { if (d) newDetails.push(d); });
 
       setQueues(prev => ({
         ...prev,
@@ -103,7 +104,7 @@ export function WordDiscovery({ onSaveRequest }: { onSaveRequest: (word: string,
 
   useEffect(() => {
     const filters: DiscoveryFilter[] = ["random", "formal", "casual", "poetic"];
-    filters.forEach(f => fetchBatch(f, 5));
+    filters.forEach(f => fetchBatch(f, 6));
   }, [fetchBatch]);
 
   const handleNext = () => {
@@ -112,8 +113,7 @@ export function WordDiscovery({ onSaveRequest }: { onSaveRequest: (word: string,
     const currentIndex = indices[filter];
     const currentQueue = queues[filter];
 
-    // Refill logic
-    if (currentQueue.length - currentIndex < 5) fetchBatch(filter, 8);
+    if (currentQueue.length - currentIndex < 5) fetchBatch(filter, 10);
 
     if (currentIndex < currentQueue.length - 1) {
       setIndices(prev => ({ ...prev, [filter]: prev[filter] + 1 }));
@@ -173,54 +173,48 @@ export function WordDiscovery({ onSaveRequest }: { onSaveRequest: (word: string,
         <AnimatePresence>
           {showFolderPicker && currentWord && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-20 p-4 bg-card/95 backdrop-blur-md flex flex-col items-center justify-center">
-              <div className="w-full max-w-sm">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="font-mono text-[9px] uppercase font-bold text-muted-foreground">Save to:</span>
-                  <button onClick={() => setShowNewFolderInput(!showNewFolderInput)} className="text-[9px] font-mono text-primary uppercase font-bold">{showNewFolderInput ? "Cancel" : "+ New"}</button>
-                </div>
-                {showNewFolderInput && (
-                  <div className="flex gap-2 mb-4 p-2 bg-secondary/50 rounded-lg border border-border">
-                    <input autoFocus value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} placeholder="NEW FOLDER..." className="flex-1 bg-transparent font-mono text-[10px] outline-none" />
-                    <button onClick={() => { if (newFolderName) { addFolder(newFolderName); onSaveRequest(currentWord.word, newFolderName); setShowFolderPicker(false); setNewFolderName(""); } }} className="bg-primary text-white p-1 rounded-md"><Save size={14} /></button>
-                  </div>
-                )}
-                <div className="flex flex-wrap gap-2 justify-center max-h-[100px] overflow-y-auto">
+              <div className="w-full max-w-sm text-center">
+                <span className="font-mono text-[10px] uppercase font-bold text-muted-foreground mb-4 block">Save to Folder</span>
+                <div className="flex flex-wrap gap-2 justify-center max-h-[120px] overflow-y-auto mb-4">
                   {folders.map((f) => (
-                    <button key={f.name} onClick={() => { onSaveRequest(currentWord.word, f.name); setShowFolderPicker(false); }} className="px-3 py-1.5 rounded-lg bg-secondary border border-border font-mono text-[10px] font-bold">{f.name}</button>
+                    <button key={f.name} onClick={() => { onSaveRequest(currentWord.word, f.name); setShowFolderPicker(false); }} className="px-3 py-1.5 rounded-lg bg-secondary border border-border font-mono text-[10px] font-bold hover:border-primary/50 transition-colors">{f.name}</button>
                   ))}
                 </div>
-                <button onClick={() => setShowFolderPicker(false)} className="mt-4 w-full py-1.5 font-mono text-[9px] uppercase text-muted-foreground">Cancel</button>
+                <button onClick={() => setShowFolderPicker(false)} className="font-mono text-[10px] uppercase text-primary font-bold">Cancel</button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
         {loading && currentQueue.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-6"><Loader2 size={24} className="animate-spin mb-3 text-primary/40" /></div>
+          <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
+            <Loader2 size={24} className="animate-spin mb-3 text-primary/40" />
+            <span className="font-mono text-[10px] uppercase tracking-widest">Shuffling Deck...</span>
+          </div>
         ) : currentWord ? (
           <AnimatePresence mode="wait">
-            <motion.div key={`${currentWord.word}-${filter}`} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="flex items-start justify-between gap-6">
+            <motion.div key={`${currentWord.word}-${filter}`} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="flex items-start justify-between gap-6">
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2.5 mb-2">
-                  <h3 className="font-mono font-bold text-3xl tracking-tight">{currentWord.word}</h3>
-                  <span className="font-mono text-[13px] text-muted-foreground/50">[{currentWord.phonetic}]</span>
+                  <h3 className="font-mono font-bold text-3xl tracking-tight text-foreground">{currentWord.word}</h3>
+                  <span className="font-mono text-[13px] text-muted-foreground/40 font-medium">[{currentWord.phonetic}]</span>
                 </div>
                 <div className="space-y-3">
                   <div className="relative pl-3">
-                    <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-primary/40" />
-                    <p className="font-mono text-[13px] leading-relaxed font-medium">{currentWord.meaning}</p>
+                    <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-primary/30 rounded-full" />
+                    <p className="font-mono text-[13px] leading-relaxed font-medium text-foreground/90">{currentWord.meaning}</p>
                   </div>
                   {currentWord.usage && (
-                    <p className="font-mono text-[12px] text-muted-foreground italic leading-relaxed">"{currentWord.usage}"</p>
+                    <p className="font-mono text-[12px] text-muted-foreground/70 italic leading-relaxed">"{currentWord.usage}"</p>
                   )}
                 </div>
               </div>
-              <button onClick={() => !isAlreadySaved && setShowFolderPicker(true)} disabled={isAlreadySaved} className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-all shadow-md ${isAlreadySaved ? 'bg-secondary/40 text-muted-foreground' : 'bg-primary text-primary-foreground hover:scale-105'}`}>
+              <button onClick={() => !isAlreadySaved && setShowFolderPicker(true)} disabled={isAlreadySaved} className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-all shadow-md ${isAlreadySaved ? 'bg-secondary/40 text-muted-foreground border border-border/50' : 'bg-primary text-primary-foreground hover:scale-105 active:scale-95'}`}>
                 {isAlreadySaved ? <Check size={20} /> : <Plus size={20} />}
               </button>
             </motion.div>
           </AnimatePresence>
-        ) : <div className="text-center font-mono text-xs opacity-50">Discovery exhausted. Try switching filters.</div>}
+        ) : <div className="text-center font-mono text-xs opacity-50 py-10 italic">Switch filters to discover more words.</div>}
       </div>
     </div>
   );
