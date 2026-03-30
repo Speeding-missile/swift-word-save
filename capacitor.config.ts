@@ -1,11 +1,12 @@
+// capacitor.config.ts
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.659168744dfe459e9f56101b94f4071b',
+  appId: 'app.vocabulary.vault', // Give it a unique ID
   appName: 'vocabulary(vault)',
   webDir: 'dist',
   server: {
-    url: 'https://65916874-4dfe-459e-9f56-101b94f4071b.lovableproject.com?forceHideBadge=true',
+    url: 'https://swift-word-save.vercel.app/', // Use your live site URL
     cleartext: true,
   },
 };
