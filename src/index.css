@@ -105,14 +105,30 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-display;
   }
-  
-  h1 { font-size: 2.5rem; }
-  h2 { font-size: 1.625rem; }
-  h3 { font-size: 1.375rem; }
-  h4 { font-size: 1.125rem; }
+
+  h1 {
+    font-size: 2.5rem;
+  }
+
+  h2 {
+    font-size: 1.625rem;
+  }
+
+  h3 {
+    font-size: 1.375rem;
+  }
+
+  h4 {
+    font-size: 1.125rem;
+  }
 }
 
 @layer utilities {
@@ -131,6 +147,7 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -139,19 +156,41 @@
     width: 4px;
     height: 4px;
   }
+
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: hsl(var(--muted-foreground) / 0.15);
     border-radius: 10px;
     transition: all 0.2s;
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground) / 0.3);
   }
+
   .custom-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--muted-foreground) / 0.15) transparent;
+  }
+}
+
+@layer utilities {
+
+  /* Hide scrollbar completely and remove its physical space */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+    width: 0px !important;
+    height: 0px !important;
+    background: transparent;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
   }
 }

@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
-  Plus, Trash2, ChevronDown, ChevronRight, CheckCircle2, XCircle,
+  Plus, Trash2, CheckCircle2, XCircle,
   BookOpen, Settings2, ArrowLeft, RefreshCw, X, Pencil
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -52,6 +52,7 @@ function loadDecks(): Deck[] {
 function saveDecks(decks: Deck[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(decks));
 }
+
 function BulkCreateModal({ onClose, onAdd }: {
   onClose: () => void;
   onAdd: (cards: Array<{ question: string; answer: string }>) => void;
@@ -204,7 +205,6 @@ function SessionMode({ cards, onEndSession, onImproveList }: {
   onEndSession: () => void;
   onImproveList: (ids: string[]) => void;
 }) {
-  // Proper Fisher-Yates Shuffle
   const shuffleCards = (array: Flashcard[]) => {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -362,7 +362,6 @@ function DeckPanel({ deck, onUpdate }: {
     );
   }
 
-  // Idle view
   return (
     <div className="flex flex-col gap-3">
       {deck.cards.length === 0 ? (
@@ -431,15 +430,15 @@ export function FlashcardsSection() {
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      {/* Browser-style Tab Bar */}
-      <div className="flex items-stretch gap-1 border-b border-border/50 pb-0 -mx-0">
+      {/* Browser-style Tab Bar - NOW SCROLLABLE */}
+      <div className="flex w-full items-stretch gap-1 border-b border-border/50 pb-0 overflow-x-auto no-scrollbar justify-start">
         {decks.map((deck, i) => (
           <div
             key={deck.id}
             onClick={() => setActiveTab(i)}
-            className={`relative flex items-center gap-1.5 px-3 py-2 rounded-t-lg cursor-pointer transition-all duration-200 max-w-[120px] flex-1 ${i === activeTab
-                ? "bg-card border border-border border-b-card text-foreground shadow-sm z-10"
-                : "bg-secondary/30 text-muted-foreground hover:bg-secondary/60"
+            className={`relative flex items-center gap-1.5 px-3 py-2 rounded-t-lg cursor-pointer transition-all duration-200 min-w-[80px] max-w-[120px] flex-1 shrink-0 ${i === activeTab
+              ? "bg-card border border-border border-b-card text-foreground shadow-sm z-10"
+              : "bg-secondary/30 text-muted-foreground hover:bg-secondary/60"
               }`}
             style={{ marginBottom: i === activeTab ? "-1px" : "0" }}
           >
@@ -475,7 +474,7 @@ export function FlashcardsSection() {
       </div>
 
       {/* Active deck content */}
-      <div className="flex-1">
+      <div className="flex-1 mt-1">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeDeck.id}

@@ -190,6 +190,7 @@ export function WordDiscovery({ onSaveRequest }: { onSaveRequest: (word: string,
     <div className="mb-4 rounded-xl border border-border bg-card/60 overflow-hidden shadow-sm backdrop-blur-sm relative">
       {/* Header */}
       <div className="border-b border-border/50 bg-secondary/30 px-3 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        {/* Title */}
         <div className="flex items-center gap-1.5 shrink-0">
           <BookOpen size={12} className="text-primary" />
           <span className="font-mono text-[10px] uppercase font-bold tracking-[0.15em] text-muted-foreground">
@@ -197,23 +198,28 @@ export function WordDiscovery({ onSaveRequest }: { onSaveRequest: (word: string,
           </span>
         </div>
 
-        {/* Filters & Controls Container - Now horizontally scrollable on mobile */}
-        <div className="flex w-full sm:w-auto items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0">
-          {(["random", "formal", "casual", "poetic"] as DiscoveryFilter[]).map((f) => (
-            <button
-              key={f}
-              onClick={() => handleFilterChange(f)}
-              disabled={loading && filter === f}
-              className={`shrink-0 px-2.5 py-1 rounded-full font-mono text-[9px] uppercase font-bold tracking-tight transition-all border ${filter === f
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-secondary/50 text-muted-foreground border-border/50 hover:bg-secondary/80"
-                }`}
-            >
-              {f}
-            </button>
-          ))}
-          <div className="w-[1px] h-3 bg-border mx-1 shrink-0" />
-          <div className="flex items-center gap-1 shrink-0 pr-2">
+        {/* Filters & Controls Container */}
+        <div className="flex w-full sm:w-auto items-center justify-between sm:justify-end gap-2">
+
+          {/* 1. SCROLLING FILTERS ONLY */}
+          <div className="flex-1 flex items-center gap-1.5 overflow-x-auto no-scrollbar pr-2">
+            {(["random", "formal", "casual", "poetic"] as DiscoveryFilter[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => handleFilterChange(f)}
+                disabled={loading && filter === f}
+                className={`shrink-0 px-2.5 py-1 rounded-full font-mono text-[9px] uppercase font-bold tracking-tight transition-all border ${filter === f
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-secondary/50 text-muted-foreground border-border/50 hover:bg-secondary/80"
+                  }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+
+          {/* 2. FIXED NEXT/PREV BUTTONS */}
+          <div className="flex items-center gap-1 shrink-0 border-l border-border/50 pl-2">
             <button
               onClick={handlePrev}
               disabled={indices[filter] === 0}
