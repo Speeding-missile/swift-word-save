@@ -1,6 +1,6 @@
 // This is the "Offline page" service worker optimized for Word Vault
 
-importScripts('https://storage.googleapis.com/workbox-cdn/releases/5.1.2/workbox-sw.js');
+importScripts('https://progressier.app/d1WvbjZCbMQjuJf80SO4/sw.js');
 
 const CACHE = "pwabuilder-page";
 

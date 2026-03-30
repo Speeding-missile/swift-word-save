@@ -6,7 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Word Vault</title>
 
-  <link rel="manifest" href="/manifest.json" />
+  <link rel="manifest" href="https://progressier.app/d1WvbjZCbMQjuJf80SO4/progressier.json" />
+
   <meta name="theme-color" content="#09090b" />
   <meta name="description" content="Your personal vocabulary manager and flashcard toolkit." />
   <meta name="author" content="sree vaishnav" />
@@ -25,22 +26,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Word Vault" />
+
+  <script defer src="https://progressier.app/d1WvbjZCbMQjuJf80SO4/script.js"></script>
 </head>
 
 <body>
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js');
-      });
-    }
-  </script>
-
 </body>
-<link rel="manifest" href="https://progressier.app/d1WvbjZCbMQjuJf80SO4/progressier.json" />
-<script defer src="https://progressier.app/d1WvbjZCbMQjuJf80SO4/script.js"></script>
 
 </html>
