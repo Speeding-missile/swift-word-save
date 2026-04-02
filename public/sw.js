@@ -1,46 +1,26 @@
-// This is the "Offline page" service worker optimized for Word Vault
+const CACHE_NAME = "vocabulary-vault-core-v1";
+const OFFLINE_FALLBACK = "/";
 
-importScripts('https://progressier.app/d1WvbjZCbMQjuJf80SO4/sw.js');
-
-const CACHE = "pwabuilder-page";
-
-// We point this to "/" because in React/Vite, the root is your app
-const offlineFallbackPage = "/";
-
-self.addEventListener("message", (event) => {
-    if (event.data && event.data.type === "SKIP_WAITING") {
-        self.skipWaiting();
-    }
-});
-
-self.addEventListener('install', async (event) => {
+self.addEventListener("install", (event) => {
+    self.skipWaiting();
     event.waitUntil(
-        caches.open(CACHE)
-            .then((cache) => cache.add(offlineFallbackPage))
+        caches.open(CACHE_NAME).then((cache) => {
+            return cache.add(OFFLINE_FALLBACK);
+        })
     );
 });
 
-if (workbox.navigationPreload.isSupported()) {
-    workbox.navigationPreload.enable();
-}
+self.addEventListener("activate", (event) => {
+    event.waitUntil(self.clients.claim());
+});
 
-self.addEventListener('fetch', (event) => {
-    if (event.request.mode === 'navigate') {
-        event.respondWith((async () => {
-            try {
-                const preloadResp = await event.preloadResponse;
-                if (preloadResp) {
-                    return preloadResp;
-                }
-
-                const networkResp = await fetch(event.request);
-                return networkResp;
-            } catch (error) {
-                // If network fails, serve the cached root (offlineFallbackPage)
-                const cache = await caches.open(CACHE);
-                const cachedResp = await cache.match(offlineFallbackPage);
-                return cachedResp;
-            }
-        })());
+self.addEventListener("fetch", (event) => {
+    if (event.request.mode === "navigate") {
+        event.respondWith(
+            fetch(event.request).catch(async () => {
+                const cache = await caches.open(CACHE_NAME);
+                return await cache.match(OFFLINE_FALLBACK);
+            })
+        );
     }
 });
