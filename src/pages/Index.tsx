@@ -1,11 +1,10 @@
-import { useState, useMemo, useRef } from "react"; // Removed unused 'useEffect'
+import { useState, useMemo, useRef } from "react";
 import { Download, Upload, Folder, Wrench } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { WordInput } from "@/components/WordInput";
 import { FolderTicker } from "@/components/FolderTicker";
-import { WordDiscovery } from "@/components/WordDiscovery";
-import { QuizSection } from "@/components/QuizSection";
+import { WordExplorer } from "@/components/WordExplorer";
 import { TodoSection } from "@/components/TodoSection";
 import { FlashcardsSection } from "@/components/FlashcardsSection";
 import { BottomNav, type MobileTab } from "@/components/BottomNav";
@@ -17,7 +16,7 @@ export type SectionType = "folders" | "quiz" | null;
 
 const Index = () => {
   const { isDark, toggle } = useTheme();
-  const { words, addWord, deleteWord, deleteFolder, folders, exportWords, importWords } = useWordStore(); // Removed unused 'quickFolders'
+  const { words, addWord, deleteWord, deleteFolder, folders, exportWords, importWords } = useWordStore();
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<MobileTab>("dashboard");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -25,10 +24,8 @@ const Index = () => {
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (event) => {
-      // Safely ensure the result is a string before trying to import
       if (typeof event.target?.result === "string") {
         importWords(event.target.result);
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -92,7 +89,7 @@ const Index = () => {
 
           <div className="flex-1 overflow-y-auto custom-scrollbar no-scrollbar pb-10 space-y-6">
 
-            {/* Personality + Search Component (Inline) */}
+            {/* Personality + Search */}
             <div className="flex flex-col gap-2">
               <AnimatePresence>
                 {personality && (
@@ -105,21 +102,13 @@ const Index = () => {
               </AnimatePresence>
 
               <div className="relative">
-                <WordInput
-                  onSubmit={handleWordSubmit}
-                  existingWords={words}
-                />
+                <WordInput onSubmit={handleWordSubmit} existingWords={words} />
               </div>
             </div>
 
-            {/* Word Discovery */}
-            <WordDiscovery onSaveRequest={handleWordSubmit} />
+            {/* Folder Explorer (Replacing WordNet & Quiz) */}
+            <WordExplorer />
 
-            {/* Quiz */}
-            <div className="p-4 rounded-2xl border border-border bg-card/60 backdrop-blur-sm">
-              <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">Quiz</p>
-              <QuizSection words={words} folders={folders} selectedFolder={selectedFolder} />
-            </div>
           </div>
         </div>
 
@@ -141,8 +130,6 @@ const Index = () => {
             </div>
           </div>
         </div>
-
-
 
       </div>
 
