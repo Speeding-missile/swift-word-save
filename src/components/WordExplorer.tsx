@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { Folder, ChevronDown, ChevronUp, Sparkles, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Folder, ChevronDown, ChevronUp, BookOpen, PenLine, Loader2, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWordStore } from "@/hooks/useWordStore";
 
@@ -8,30 +8,9 @@ export function WordExplorer() {
     const [selectedFolders, setSelectedFolders] = useState<string[]>([]);
     const [showAll, setShowAll] = useState(false);
 
-    // Track which word is open, and which ones are currently thinking
     const [expandedWordId, setExpandedWordId] = useState<string | null>(null);
-    const [loadingWords, setLoadingWords] = useState<Record<string, boolean>>({});
-
-    const workerRef = useRef<Worker | null>(null);
-
-    // Initialize Web Worker when the component mounts
-    useEffect(() => {
-        workerRef.current = new Worker(new URL('../workers/ai.worker.ts', import.meta.url), { type: 'module' });
-
-        workerRef.current.onmessage = (e) => {
-            const { id, definition, example, error } = e.data;
-
-            // Stop the loading spinner
-            setLoadingWords((prev) => ({ ...prev, [id]: false }));
-
-            // Permanently save to vault so we never run AI for this word again!
-            if (!error) {
-                updateWord(id, { definition, example });
-            }
-        };
-
-        return () => workerRef.current?.terminate();
-    }, [updateWord]);
+    const [fetchingId, setFetchingId] = useState<string | null>(null);
+    const [showNoteForId, setShowNoteForId] = useState<string | null>(null);
 
     const toggleFolder = (folderName: string) => {
         setSelectedFolders((prev) =>
@@ -39,18 +18,31 @@ export function WordExplorer() {
         );
     };
 
-    const handleWordClick = (wordObj: any) => {
-        if (expandedWordId === wordObj.id) {
-            setExpandedWordId(null); // Close if clicked again
+    const handleWordClick = async (w: any) => {
+        if (expandedWordId === w.id) {
+            setExpandedWordId(null);
+            setShowNoteForId(null);
             return;
         }
 
-        setExpandedWordId(wordObj.id); // Open the block
+        setExpandedWordId(w.id);
 
-        // If we DO NOT have the definition saved, and we aren't currently loading it, run the AI!
-        if (!wordObj.definition && !loadingWords[wordObj.id]) {
-            setLoadingWords((prev) => ({ ...prev, [wordObj.id]: true }));
-            workerRef.current?.postMessage({ word: wordObj.word, id: wordObj.id });
+        if (!w.definition && fetchingId !== w.id) {
+            setFetchingId(w.id);
+            try {
+                const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${w.word}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const def = data?.[0]?.meanings?.[0]?.definitions?.[0]?.definition || "Definition not found.";
+                    updateWord(w.id, { definition: def });
+                } else {
+                    updateWord(w.id, { definition: "Definition not found." });
+                }
+            } catch (e) {
+                updateWord(w.id, { definition: "Error fetching definition." });
+            } finally {
+                setFetchingId(null);
+            }
         }
     };
 
@@ -64,84 +56,121 @@ export function WordExplorer() {
 
     if (words.length === 0) return null;
 
-    return (
-        // Replaced the "box" with a flex column that blends into the background
-        <div className="flex flex-col gap-4 w-full">
+    // CHANGED: Ultra-fast snappy transition (0.1s instead of 0.3s)
+    const snappyTransition = { duration: 0, ease: "easeOut" as const };
 
+    return (
+        <div className="flex flex-col gap-4 w-full">
             {/* Filters */}
             <div className="flex flex-wrap gap-2 sticky top-0 z-20 bg-background/95 py-2 backdrop-blur-sm">
-                {folders.map((folder) => {
-                    const isSelected = selectedFolders.includes(folder.name);
-                    return (
-                        <button
-                            key={folder.name}
-                            onClick={() => toggleFolder(folder.name)}
-                            className={`px-3 py-1.5 rounded-lg font-mono text-[10px] font-bold uppercase tracking-widest transition-all border ${isSelected
-                                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                                    : "bg-secondary/50 text-muted-foreground border-transparent hover:bg-secondary hover:border-border"
-                                }`}
-                        >
-                            {folder.name} ({folder.count})
-                        </button>
-                    );
-                })}
+                {folders.map((f) => (
+                    <button
+                        key={f.name}
+                        onClick={() => toggleFolder(f.name)}
+                        className={`px-3 py-1.5 rounded-lg font-mono text-[10px] font-bold uppercase transition-all border ${selectedFolders.includes(f.name) ? "bg-primary text-primary-foreground border-primary" : "bg-secondary/50 text-muted-foreground border-transparent"
+                            }`}
+                    >
+                        {f.name} ({f.count})
+                    </button>
+                ))}
             </div>
 
             {/* Dynamic Word Cloud */}
-            <motion.div layout className="flex flex-wrap gap-2 items-start">
+            <div className="flex flex-wrap gap-2 items-start">
                 <AnimatePresence>
                     {displayedWords.map((w) => {
                         const isExpanded = expandedWordId === w.id;
-                        const isLoading = loadingWords[w.id];
 
                         return (
                             <motion.div
                                 key={w.id}
-                                layout
-                                initial={{ opacity: 0, scale: 0.9 }}
+                                // CHANGED: Removed the 'layout' prop here. Now it snaps instantly!
+                                initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                                onClick={() => handleWordClick(w)}
-                                className={`relative cursor-pointer overflow-hidden rounded-xl border border-border shadow-sm transition-colors ${isExpanded ? "w-full bg-card shadow-md" : "bg-background hover:bg-secondary/50"
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={snappyTransition}
+                                className={`relative overflow-hidden rounded-xl border border-border shadow-sm ${isExpanded ? "w-full bg-card shadow-md" : "bg-background hover:bg-secondary/50 cursor-pointer"
                                     }`}
                             >
-                                {/* The Word Itself */}
-                                <motion.div layout className={`px-3 py-2 font-mono font-bold text-foreground ${isExpanded ? 'text-sm border-b border-border/50 bg-secondary/30' : 'text-xs'}`}>
-                                    {w.word}
-                                    {!w.definition && isExpanded && !isLoading && (
-                                        <Sparkles size={10} className="inline ml-1.5 mb-0.5 text-primary opacity-60" />
+                                {/* Header (The clickable word) */}
+                                <div
+                                    onClick={() => handleWordClick(w)}
+                                    className={`px-3 py-2 flex items-center justify-between font-mono font-bold text-foreground cursor-pointer ${isExpanded ? 'text-sm border-b border-border/50 bg-secondary/30' : 'text-xs'}`}
+                                >
+                                    <span>{w.word}</span>
+                                    {isExpanded && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setShowNoteForId(showNoteForId === w.id ? null : w.id); }}
+                                            className="p-1 rounded-full hover:bg-primary/10 text-primary transition-colors"
+                                        >
+                                            <Plus size={14} className={`transform transition-transform ${showNoteForId === w.id ? 'rotate-45' : ''}`} />
+                                        </button>
                                     )}
-                                </motion.div>
+                                </div>
 
-                                {/* The Expanding Definition Panel */}
-                                <AnimatePresence>
+                                {/* Snappy Expanding Body */}
+                                <AnimatePresence initial={false}>
                                     {isExpanded && (
                                         <motion.div
                                             initial={{ height: 0, opacity: 0 }}
                                             animate={{ height: "auto", opacity: 1 }}
                                             exit={{ height: 0, opacity: 0 }}
-                                            className="px-3"
+                                            transition={snappyTransition}
+                                            className="overflow-hidden"
                                         >
-                                            <div className="py-3 flex flex-col gap-2">
-                                                {isLoading ? (
-                                                    <div className="flex items-center gap-2 text-muted-foreground font-mono text-[10px] uppercase tracking-widest">
-                                                        <Loader2 size={12} className="animate-spin text-primary" />
-                                                        AI is reading dictionary...
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                        <div className="text-sm text-foreground/90 leading-snug">
-                                                            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground block mb-0.5">Definition</span>
-                                                            {w.definition}
-                                                        </div>
-                                                        {w.example && (
-                                                            <div className="text-sm text-foreground/90 italic border-l-2 border-primary/30 pl-2 mt-1">
-                                                                <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground block mb-0.5 not-italic">Example</span>
-                                                                "{w.example}"
+                                            <div className="px-3 pb-4 pt-3 flex flex-col gap-3">
+
+                                                {/* Definition Section */}
+                                                <div>
+                                                    <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground flex items-center gap-1 mb-1">
+                                                        <BookOpen size={10} /> Definition
+                                                    </span>
+                                                    {fetchingId === w.id && !w.definition ? (
+                                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                            <Loader2 size={10} className="animate-spin" /> Fetching...
+                                                        </span>
+                                                    ) : (
+                                                        <p className="text-xs text-foreground/80 leading-relaxed">
+                                                            {w.definition || "No definition available."}
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                {/* Snappy Expanding Note Section */}
+                                                <AnimatePresence initial={false}>
+                                                    {(w.note || showNoteForId === w.id) && (
+                                                        <motion.div
+                                                            initial={{ height: 0, opacity: 0 }}
+                                                            animate={{ height: "auto", opacity: 1 }}
+                                                            exit={{ height: 0, opacity: 0 }}
+                                                            transition={snappyTransition}
+                                                            className="overflow-hidden"
+                                                        >
+                                                            <div className="pt-2 border-t border-border/30 mt-1">
+                                                                <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground flex items-center gap-1 mb-1">
+                                                                    <PenLine size={10} /> My Note
+                                                                </span>
+                                                                <textarea
+                                                                    className="w-full bg-transparent border-none p-0 text-xs text-foreground placeholder:text-muted-foreground/40 resize-none focus:outline-none transition-all leading-relaxed"
+                                                                    autoFocus={showNoteForId === w.id && !w.note}
+                                                                    rows={1}
+                                                                    placeholder="Add a mnemonic or context..."
+                                                                    defaultValue={w.note || ""}
+                                                                    onInput={(e) => {
+                                                                        const target = e.target as HTMLTextAreaElement;
+                                                                        target.style.height = "auto";
+                                                                        target.style.height = `${target.scrollHeight}px`;
+                                                                    }}
+                                                                    onBlur={(e) => {
+                                                                        updateWord(w.id, { note: e.target.value });
+                                                                        if (!e.target.value) setShowNoteForId(null);
+                                                                    }}
+                                                                />
                                                             </div>
-                                                        )}
-                                                    </>
-                                                )}
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+
                                             </div>
                                         </motion.div>
                                     )}
@@ -150,14 +179,11 @@ export function WordExplorer() {
                         );
                     })}
                 </AnimatePresence>
-            </motion.div>
+            </div>
 
             {/* Show More */}
             {hasMore && (
-                <button
-                    onClick={() => setShowAll(!showAll)}
-                    className="w-full flex items-center justify-center gap-1 py-2 mt-2 rounded-xl border border-border bg-secondary/30 font-mono text-[10px] font-bold uppercase tracking-widest hover:bg-secondary transition-all text-muted-foreground"
-                >
+                <button onClick={() => setShowAll(!showAll)} className="w-full flex items-center justify-center gap-1 py-2 mt-2 rounded-xl border border-border bg-secondary/30 font-mono text-[10px] font-bold uppercase transition-all text-muted-foreground hover:bg-secondary">
                     {showAll ? <><ChevronUp size={12} /> Collapse</> : <><ChevronDown size={12} /> Show {filteredWords.length - DISPLAY_LIMIT} More</>}
                 </button>
             )}
