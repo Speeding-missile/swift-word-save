@@ -7,6 +7,8 @@ export interface WordEntry {
   folder: string;
   createdAt: number;
   needsPractice?: boolean; // Tracks if a word was marked "wrong"
+  definition?: string;     // Caches the AI-generated definition
+  example?: string;        // Caches the AI-generated example
 }
 
 export interface Folder {
@@ -155,7 +157,9 @@ export const useWordStore = create<WordStore>()(
 
         lines.forEach((line, i) => {
           if (i === 0 && line.toLowerCase().includes("word")) return;
-          const [word, folder] = line.split("\t");
+          // Updated to parse new definition and example columns if they exist
+          const [word, folder, practice, date, definition, example] = line.split("\t");
+
           if (word?.trim()) {
             const folderName = folder?.trim() || "General";
             newWordsList.push({
@@ -163,7 +167,9 @@ export const useWordStore = create<WordStore>()(
               word: word.trim(),
               folder: folderName,
               createdAt: Date.now() + i,
-              needsPractice: false,
+              needsPractice: practice === "Yes",
+              definition: definition?.trim() || undefined,
+              example: example?.trim() || undefined,
             });
             currentFolderNames.add(folderName);
           }
@@ -185,9 +191,10 @@ export const useWordStore = create<WordStore>()(
 
       exportWords: () => {
         const { words } = get();
-        const header = "Word\tFolder\tNeeds Practice\tDate\n";
+        // Updated header to include the cached AI data
+        const header = "Word\tFolder\tNeeds Practice\tDate\tDefinition\tExample\n";
         const text = words
-          .map((w) => `${w.word}\t${w.folder}\t${w.needsPractice ? "Yes" : "No"}\t${new Date(w.createdAt).toLocaleDateString()}`)
+          .map((w) => `${w.word}\t${w.folder}\t${w.needsPractice ? "Yes" : "No"}\t${new Date(w.createdAt).toLocaleDateString()}\t${w.definition || ""}\t${w.example || ""}`)
           .join("\n");
         const blob = new Blob([header + text], { type: "text/tab-separated-values" });
         const url = URL.createObjectURL(blob);
